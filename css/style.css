@@ -14,16 +14,47 @@ body
 }
 
 canvas{
-	width: 70%;
-	height: 60%;
+	/*width: 70%;
+	height: 60%;*/
 	margin: auto;
 	border: 1px solid black;
 }
 
 #clear-button{
+	display: flex;
 	position: fixed;
 	height: 5%;
 	width: 10%;
-	margin-top: 50%;
-	margin-left: 45%;
+	top: 85%;
+	left: 45%;
+	border: 1px solid grey;
+	background-color: grey;
+}
+
+#clear-button p{
+	margin:auto;
+}
+
+.change-figure{
+
+	position: fixed;
+	height: 20%;
+	width: 7%;
+	top: 2%;
+	left: 2%;
+}
+
+#rectangle{
+	display: flex;
+	height: 35%;
+	width: 98%;
+	margin-top: 1%;
+	margin-left: 1%;
+	padding: 0; 
+	border: 1px solid grey;
+	background-color: grey;
+}
+
+#rectangle p{
+	margin: auto;
 }
