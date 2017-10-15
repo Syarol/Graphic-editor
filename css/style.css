@@ -7,15 +7,33 @@ body
     margin: 0;
 }
 
-.main-body{
+#main-body{
 	height: 100%;
 	width: 100%;
 	display: flex;
+	z-index: 100;
+}
+
+#main-shadow{
+	height: 100%;
+	width: 100%;
+	display: flex;
+	position: fixed;
+	top: 0;
+	z-index: 10;
+	visibility: hidden;
+}
+
+#instruments{
+	height: 100%;
+	width: 100%;
+	display: flex;
+	position: fixed;
+	top: 0;
+	z-index: 1;
 }
 
 canvas{
-	/*width: 70%;
-	height: 60%;*/
 	margin: auto;
 	border: 1px solid black;
 }
@@ -32,6 +50,21 @@ canvas{
 }
 
 #clear-button p{
+	margin:auto;
+}
+
+#clear-shadow-button{
+	display: flex;
+	position: fixed;
+	height: 5%;
+	width: 10%;
+	top: 85%;
+	left: 45%;
+	border: 1px solid grey;
+	background-color: grey;
+}
+
+#clear-shadow-button p{
 	margin:auto;
 }
 

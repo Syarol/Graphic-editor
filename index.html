@@ -9,12 +9,14 @@
 </head>
 <body>
 
-	<section class="main-body">
+	<section id="main-body">
 		
 		<canvas id="canvas"  width="800" height="500"></canvas>
+
 		<button id="clear-button">
 			<p>Clear</p>
 		</button>
+
 		<div class="change-figure">
 			<button id="rectangle">
 				<p>Rectangle</p>
@@ -35,10 +37,45 @@
 			<button id="save">
 				<p>Save</p>
 			</button>
+
+			<div class="wheel" id="colorWheel"></div>
 		</div>
 
 	</section>
 
+	<section id="main-shadow">
+		<canvas id="canvas-shadow"  width="800" height="500"> </canvas>
+
+		<button id="clear-shadow-button">
+			<p>Clear</p>
+		</button>
+
+		<div class="change-figure">
+			<button id="rectangle-shadow">
+				<p>Rectangle</p>
+			</button>
+
+			<button id="line-shadow">
+				<p>Line</p>
+			</button>
+
+			<button id="curved-shadow">
+				<p>Curved</p>
+			</button>
+
+			<button id="eraser-shadow">
+				<p>Eraser</p>
+			</button>
+
+			<button id="save-shadow">
+				<p>Save</p>
+			</button>
+
+			<div class="wheel" id="colorWheelshadow"></div>
+		</div>
+	</section>
+
+	<script src="js/iro.min.js"></script>
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/1.7.19/fabric.min.js"></script>
 	<!--<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>-->
 	<script src="js/index.js"></script>

@@ -2,13 +2,48 @@
 var canvas = document.getElementById('canvas');
 var context = document.getElementById('canvas').getContext("2d");
 
+var mainShadow = document.getElementById('main-shadow');
+var canvasShadow = document.getElementById('canvas-shadow');
+var contextShadow = document.getElementById('canvas-shadow').getContext("2d");
+
 var mouseX;
 var mouseY;
+var startX;
+var startY;
 var clickX = new Array();
 var clickY = new Array();
 var clickDrag = new Array();
 var paint;
 var draw = drawCurved;
+
+var clearButton = document.getElementById("clear-button");
+var clearShadowButton = document.getElementById("clear-shadow-button");
+var chooseRectangle = document.getElementById("rectangle");
+var chooseLine = document.getElementById("line");
+var chooseCurvedLine = document.getElementById("curved");
+var eraser = document.getElementById("eraser");
+var save = document.getElementById("save");
+var colorBefore;
+
+var chooseShadowLine = document.getElementById("line-shadow");
+var chooseShadowCurvedLine = document.getElementById("curved-shadow");
+var eraserShadow = document.getElementById("eraser-shadow");
+var saveShadow = document.getElementById("save-shadow");
+
+var wheel = {
+    width: 320,
+    height: 320,
+    padding: 4,
+    sliderMargin: 24,
+    markerRadius: 8,
+    color: "rgb(68, 255, 158)",
+}
+var colorWheel = iro.ColorWheel("#colorWheel", wheel );
+var colorShadowWheel = iro.ColorWheel("#colorWheelshadow", wheel );
+
+context.strokeStyle = colorWheel.color.hexString;
+context.lineJoin = "round";
+context.lineWidth = 5;
 
 function mousePos(e){
 	var rect = canvas.getBoundingClientRect();
@@ -17,8 +52,7 @@ function mousePos(e){
 	return{mouseX,mouseY};
 }
 
-function addClick(mouseX, mouseY, dragging)
-{
+function addClick(mouseX, mouseY, dragging){
   clickX.push(mouseX);
   clickY.push(mouseY);
   clickDrag.push(dragging);
@@ -29,6 +63,7 @@ canvas.addEventListener('mousedown',function(e){
   mousePos(e);
   addClick(mouseX,mouseY,false);
   draw();
+  colorWheel.on("color:change", onColorChange);
 
   canvas.addEventListener('mouseup',function(e){
     paint = false;
@@ -48,32 +83,32 @@ canvas.addEventListener('mousemove',function(e){
   paint = false;
 });*/
 
-context.strokeStyle = "#df4b26";
-context.lineJoin = "round";
-context.lineWidth = 5;
-
-var clearButton = document.getElementById("clear-button");
-
 clearButton.addEventListener('click', function(){
 	context.clearRect(0, 0, canvas.width, canvas.height);
 	clearHistory();
 });
 
-var chooseRectangle = document.getElementById("rectangle");
-var chooseLine = document.getElementById("line");
-var chooseCurvedLine = document.getElementById("curved");
-var eraser = document.getElementById("eraser");
-var save = document.getElementById("save");
-
-var colorBefore;
+clearShadowButton.addEventListener('click', function(){
+  contextShadow.clearRect(0, 0, canvasShadow.width, canvasShadow.height);
+  context.clearRect(0, 0, canvas.width, canvas.height);
+  clearHistory();
+});
 
 chooseRectangle.addEventListener('click', function(){
+  mainShadow.style.visibility = 'visible';
   context.strokeStyle = colorBefore; 
   clearHistory();
-  draw = drawRectangle;
+  drawRectangle();
 });
 
 chooseLine.addEventListener('click', function(){
+  context.strokeStyle = colorBefore;
+  clearHistory();
+  draw = drawLine;
+});
+
+chooseShadowLine.addEventListener('click', function(){
+  mainShadow.style.visibility = 'hidden';
   context.strokeStyle = colorBefore;
   clearHistory();
   draw = drawLine;
@@ -85,7 +120,22 @@ chooseCurvedLine.addEventListener('click',function(){
   draw = drawCurved;
 });
 
+chooseShadowCurvedLine.addEventListener('click', function(){
+  mainShadow.style.visibility = 'hidden';
+  context.strokeStyle = colorBefore;
+  clearHistory();
+  draw = drawCurved;
+});
+
 eraser.addEventListener('click', function(){
+  clearHistory();
+  colorBefore = context.strokeStyle;
+  context.strokeStyle = 'white';
+  draw = drawCurved;
+});
+
+eraserShadow.addEventListener('click', function(){
+  mainShadow.style.visibility = 'hidden';
   clearHistory();
   colorBefore = context.strokeStyle;
   context.strokeStyle = 'white';
@@ -99,14 +149,46 @@ save.addEventListener('click', function(){
   link.click();
 });
 
+saveShadow.addEventListener('click', function(){
+  var link = document.createElement('a');
+  link.download = "Your_masterpiece.png";
+  link.href = canvas.toDataURL("image/png").replace("image/png", "image/octet-stream");
+  link.click();
+});
+
 function drawRectangle(){
+  mainShadow.style.visibility = 'visible';
+  clearHistory();
+  canvasShadow.addEventListener('mousedown',function (e) {
+    drawRectangleDown(e);
+  });
+  canvasShadow.addEventListener('mousemove',function (e) {
+    drawRectangleMove(e);
+  });
 
-  var width = clickX[clickX.length] - clickX[clickX.length-1];
-  var height = clickY[clickY.length] - clickY[clickY.length-1];
+  function drawRectangleDown(e) {
+    mousePos(e);
+    startX = mouseX;
+    startY = mouseY;
+    paint = true;
+  }
 
-  context.strokeRect(clickX[clickX.length-2], clickY[clickY.length-2], width, height);
-  console.log('all ok');
+  function drawRectangleMove(e) {
+    contextShadow.clearRect(0, 0, canvas.width, canvas.height);
+    // if we're not dragging, just return
+    if (!paint) {
+      return;
+    }
+
+    mousePos(e);
+    contextShadow.strokeRect(startX, startY, mouseX - startX, mouseY - startY);
+    canvasShadow.addEventListener('mouseup',function() {
+      context.strokeRect(startX, startY, mouseX - startX, mouseY - startY);
+      paint = false;
+    });
+  }
 }
+
 function drawCurved(){
   for(var i=0; i < clickX.length; i++) {    
     context.beginPath();
@@ -124,6 +206,7 @@ function drawCurved(){
 function drawLine(){
   context.beginPath();
   context.moveTo(clickX[clickX.length-1], clickY[clickY.length-1]);
+
   context.lineTo(clickX[clickX.length-2], clickY[clickY.length-2]);
   context.stroke();
 }
@@ -133,3 +216,11 @@ function clearHistory(){
   clickY=[];
   clickDrag=[];
 }
+
+function onColorChange(color) {
+  context.strokeStyle = color.hexString;
+  clearHistory();
+};
+
+
+
