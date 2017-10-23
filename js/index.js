@@ -14,38 +14,30 @@ var draw = drawCurved;
 var isLine = false;
 var drawType = 'pidor';
 var lineLong;
+var colorWheelForward = false;
 
 var clearButton = document.getElementById("clear-button");
-var clearShadowButton = document.getElementById("clear-shadow-button");
 var chooseRectangle = document.getElementById("rectangle");
 var chooseLine = document.getElementById("line");
 var chooseCurvedLine = document.getElementById("curved");
 var chooseTriangle = document.getElementById("triangle");
 var chooseCircle = document.getElementById("circle");
+var colorButton = document.getElementById("color");
 var eraser = document.getElementById("eraser");
 var save = document.getElementById("save");
 var colorBefore;
 
-var chooseRectangleShadow = document.getElementById("rectangle-shadow");
-var chooseShadowLine = document.getElementById("line-shadow");
-var chooseShadowCurvedLine = document.getElementById("curved-shadow");
-var chooseTriangleShadow = document.getElementById("triangle-shadow");
-var chooseCircleShadow = document.getElementById("circle-shadow");
-var eraserShadow = document.getElementById("eraser-shadow");
-var saveShadow = document.getElementById("save-shadow");
-
 var wheel = {
     width: 320,
     height: 320,
-    padding: 4,
+    padding: 2,
     sliderMargin: 24,
-    markerRadius: 8,
-    borderWidth: 0,
+    markerRadius: 5,
+    borderWidth: 2,
     color: "rgb(68, 255, 158)",
 };
 
 var colorWheel = iro.ColorWheel("#colorWheel", wheel );
-var colorShadowWheel = iro.ColorWheel("#colorWheelshadow", wheel );
 
 context.strokeStyle = colorWheel.color.hexString;
 context.lineJoin = "round";
@@ -147,11 +139,6 @@ canvasShadow.addEventListener('mouseup', function(e){
 
 
 clearButton.addEventListener('click', function(){
-  context.clearRect(0, 0, canvas.width, canvas.height);
-  clearHistory();
-});
-
-clearShadowButton.addEventListener('click', function(){
   contextShadow.clearRect(0, 0, canvasShadow.width, canvasShadow.height);
   context.clearRect(0, 0, canvas.width, canvas.height);
   clearHistory();
@@ -162,18 +149,7 @@ chooseRectangle.addEventListener('click', function(e){
   drawRectangle(e);
 });
 
-chooseRectangleShadow.addEventListener('click', function(e){
-  drawRectangle(e);
-});
-
 chooseLine.addEventListener('click', function(){
-  context.strokeStyle = colorBefore;
-  clearHistory();
-  isLine = true;
-  draw = drawLine;
-});
-
-chooseShadowLine.addEventListener('click', function(){
   mainShadow.style.visibility = 'hidden'; 
   context.strokeStyle = colorBefore;
   clearHistory();
@@ -182,11 +158,6 @@ chooseShadowLine.addEventListener('click', function(){
 });
 
 chooseCurvedLine.addEventListener('click',function(){
-  drawNotLine();
-  draw = drawCurved;
-});
-
-chooseShadowCurvedLine.addEventListener('click', function(){
   mainShadow.style.visibility = 'hidden';
   drawNotLine();
   draw = drawCurved;
@@ -197,16 +168,8 @@ chooseTriangle.addEventListener('click', function(e){
   drawTriangle(e);
 });
 
-chooseTriangleShadow.addEventListener('click', function(e){
-  drawTriangle(e);
-});
-
 chooseCircle.addEventListener('click', function(e){
   mainShadow.style.visibility = 'visible';
-  drawCircle(e);
-});
-
-chooseCircleShadow.addEventListener('click', function(e){
   drawCircle(e);
 });
 
@@ -214,15 +177,7 @@ eraser.addEventListener('click', function(){
   eraserCanvas();
 });
 
-eraserShadow.addEventListener('click', function(){
-  eraserCanvas();
-});
-
 save.addEventListener('click', function(){
-  saveCanvas();
-});
-
-saveShadow.addEventListener('click', function(){
   saveCanvas();
 });
 
@@ -245,7 +200,6 @@ function saveCanvas(){
 function drawRectangle(e){
   drawNotLine();
   drawType = 'Rectangle';
-
 }
 
 function drawRectangleDown(e) {
@@ -314,7 +268,7 @@ function drawCircleMove(e){
     return;
   }
   mousePos(e);
-  //write code here:
+
   lineLong = (Math.sqrt((startX-mouseX)**2 + (startY-mouseY)**2));
 
   contextShadow.beginPath();
@@ -398,11 +352,6 @@ function rangeSlider(id, onDrag) {
 }
 
 rangeSlider('range-slider', function(value) {
-  context.lineWidth = value;
-  contextShadow.lineWidth = value;
-  clearHistory();
-});
-rangeSlider('range-slider-shadow', function(value) {
   context.lineWidth = value;
   contextShadow.lineWidth = value;
   clearHistory();
