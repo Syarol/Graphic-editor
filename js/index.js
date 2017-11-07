@@ -1,10 +1,10 @@
 
 var canvas = document.getElementById('canvas');
-var context = document.getElementById('canvas').getContext("2d");
+var ctx = document.getElementById('canvas').getContext("2d");
 
 var mainShadow = document.getElementById('main-shadow');
 var canvasShadow = document.getElementById('canvas-shadow');
-var contextShadow = document.getElementById('canvas-shadow').getContext("2d");
+var ctxShadow = document.getElementById('canvas-shadow').getContext("2d");
 
 var mouseX, mouseY;
 var startX, startY;
@@ -12,9 +12,9 @@ var clickX = [], clickY = [], clickDrag = [];
 var paint = false;
 var draw = drawCurved;
 var isLine = false;
-var drawType = 'pidor';
+var drawType = '';
 var lineLong;
-var colorWheelForward = false;
+var emptyVar;
 
 var clearButton = document.getElementById("clear-button");
 var chooseRectangle = document.getElementById("rectangle");
@@ -22,7 +22,7 @@ var chooseLine = document.getElementById("line");
 var chooseCurvedLine = document.getElementById("curved");
 var chooseTriangle = document.getElementById("triangle");
 var chooseCircle = document.getElementById("circle");
-var colorButton = document.getElementById("color");
+var colorButton = document.getElementById('color-button');
 var eraser = document.getElementById("eraser");
 var save = document.getElementById("save");
 var colorBefore;
@@ -38,10 +38,13 @@ var wheel = {
 };
 
 var colorWheel = iro.ColorWheel("#colorWheel", wheel );
+var colorWheelElement = document.getElementById('colorWheel');
 
-context.strokeStyle = colorWheel.color.hexString;
-context.lineJoin = "round";
-context.lineWidth = 3;
+colorWheel.on("color:change", onColorChange);
+
+ctx.strokeStyle = colorWheel.color.hexString;
+ctx.lineJoin = "round";
+ctx.lineWidth = 3;
 
 function mousePos(e){
   var rect = canvas.getBoundingClientRect();
@@ -61,7 +64,6 @@ canvas.addEventListener('mousedown',function(e){
   mousePos(e);
   addClick(mouseX,mouseY,false);
   draw();
-  colorWheel.on("color:change", onColorChange);
 });
 
 canvas.addEventListener('mousemove',function(e){
@@ -79,9 +81,9 @@ canvas.addEventListener('mouseup',function(e){
 });
 
 //stop draw when mouse leave canvas
-/*canvas.addEventListener('mouseleave',function(e){
+canvas.addEventListener('mouseleave',function(e){
   paint = false;
-});*/
+});
 
 canvasShadow.addEventListener('mousedown',function (e) {
   switch (drawType){
@@ -97,6 +99,17 @@ canvasShadow.addEventListener('mousedown',function (e) {
   }
 });
 
+canvasShadow.addEventListener('click',function(e){
+  switch (drawType){
+    case 'Line':
+      ctx.beginPath();
+        ctx.moveTo(startX, startY);
+        ctx.lineTo(mouseX, mouseY);
+      ctx.stroke();
+      break;
+  }
+});
+
 canvasShadow.addEventListener('mousemove',function (e) {
   switch (drawType){
     case 'Triangle':
@@ -108,6 +121,9 @@ canvasShadow.addEventListener('mousemove',function (e) {
     case 'Circle':
       drawCircleMove(e);
       break;
+    case 'Line':
+      drawLineMove(e);
+      break;
   }
 });
 
@@ -116,31 +132,39 @@ canvasShadow.addEventListener('mouseup', function(e){
     case 'Triangle':
       lineLong = Math.sqrt((startX-mouseX)**2 + (startY-mouseY)**2)/2;
 
-      context.beginPath();
-      context.moveTo(startX, startY - lineLong);
-      context.lineTo(startX - lineLong, startY + lineLong);
-      context.lineTo(startX + lineLong, startY + lineLong);
-      context.lineTo(startX, startY - lineLong);
-      context.stroke();
-      context.closePath();
+      ctx.beginPath();
+      ctx.moveTo(startX, startY - lineLong);
+      ctx.lineTo(startX - lineLong, startY + lineLong);
+      ctx.lineTo(startX + lineLong, startY + lineLong);
+      ctx.lineTo(startX, startY - lineLong);
+      ctx.stroke();
+      ctx.closePath();
       break; 
     case 'Rectangle':
-      context.strokeRect(startX, startY, mouseX - startX, mouseY - startY);
+      ctx.strokeRect(startX, startY, mouseX - startX, mouseY - startY);
       break;
     case 'Circle':
       lineLong = Math.sqrt((startX-mouseX)**2 + (startY-mouseY)**2);
-      context.beginPath();
-      context.arc(startX, startY, lineLong, 0, 2 * Math.PI, false);
-      context.stroke();
+      ctx.beginPath();
+      ctx.arc(startX, startY, lineLong, 0, 2 * Math.PI, false);
+      ctx.stroke();
+      break;
+    case 'Line':
+      ctx.beginPath();
+        ctx.moveTo(startX, startY);
+        ctx.lineTo(mouseX, mouseY);
+      ctx.stroke();
+      startX = mouseX;
+      startY = mouseY;
       break;
   }
-  paint = false;
+  //paint = false;
 });
 
 
 clearButton.addEventListener('click', function(){
-  contextShadow.clearRect(0, 0, canvasShadow.width, canvasShadow.height);
-  context.clearRect(0, 0, canvas.width, canvas.height);
+  ctxShadow.clearRect(0, 0, canvasShadow.width, canvasShadow.height);
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
   clearHistory();
 });
 
@@ -150,11 +174,8 @@ chooseRectangle.addEventListener('click', function(e){
 });
 
 chooseLine.addEventListener('click', function(){
-  mainShadow.style.visibility = 'hidden'; 
-  context.strokeStyle = colorBefore;
-  clearHistory();
-  isLine = true;
-  draw = drawLine;
+  mainShadow.style.visibility = 'visible'; 
+  drawLine();
 });
 
 chooseCurvedLine.addEventListener('click',function(){
@@ -173,6 +194,11 @@ chooseCircle.addEventListener('click', function(e){
   drawCircle(e);
 });
 
+colorButton.addEventListener('click', function(){
+  colorWheelElement.classList.toggle('colorWheelOpen');
+  colorWheelElement.classList.toggle('colorWheelClose');
+});
+
 eraser.addEventListener('click', function(){
   eraserCanvas();
 });
@@ -185,8 +211,8 @@ function eraserCanvas(){
   mainShadow.style.visibility = 'hidden';
   clearHistory();
   isLine = false;
-  colorBefore = context.strokeStyle;
-  context.strokeStyle = 'white';
+  colorBefore = ctx.strokeStyle;
+  ctx.strokeStyle = 'white';
   draw = drawCurved;
 }
 
@@ -210,15 +236,37 @@ function drawRectangleDown(e) {
 }
 
 function drawRectangleMove(e) {
-  contextShadow.clearRect(0, 0, canvas.width, canvas.height);
+  ctxShadow.clearRect(0, 0, canvas.width, canvas.height);
   // if we're not dragging, just return
   if (!paint) {
     return;
   }
   mousePos(e);
-  contextShadow.strokeRect(startX, startY, mouseX - startX, mouseY - startY);
+  ctxShadow.strokeRect(startX, startY, mouseX - startX, mouseY - startY);
+}
+/////////////
+function drawLine(){
+  ctx.strokeStyle = colorBefore;
+  clearHistory();
+
+  startX = mouseX = emptyVar;
+  startY = mouseY = emptyVar;
+
+  isLine = true;
+  drawType = 'Line';
 }
 
+function drawLineMove(e){
+  ctxShadow.clearRect(0, 0, canvas.width, canvas.height);
+ 
+  mousePos(e);
+
+  ctxShadow.beginPath();
+    ctxShadow.moveTo(startX, startY);
+    ctxShadow.lineTo(mouseX, mouseY);
+  ctxShadow.stroke();
+}
+////////////////
 function drawTriangle(e){
   drawNotLine();
   drawType = 'Triangle';
@@ -232,7 +280,7 @@ function drawTriangleDown(e) {
 }
 
 function drawTriangleMove(e) {
-  contextShadow.clearRect(0, 0, canvas.width, canvas.height);
+  ctxShadow.clearRect(0, 0, canvas.width, canvas.height);
   // if we're not dragging, just return
   if (!paint) {
     return;
@@ -240,13 +288,13 @@ function drawTriangleMove(e) {
   mousePos(e);
   lineLong = (Math.sqrt((startX-mouseX)**2 + (startY-mouseY)**2))/2;
 
-  contextShadow.beginPath();
-  contextShadow.moveTo(startX, startY - lineLong);
-  contextShadow.lineTo(startX - lineLong, startY + lineLong);
-  contextShadow.lineTo(startX + lineLong, startY + lineLong);
-  contextShadow.lineTo(startX, startY - lineLong);
-  contextShadow.stroke();
-  contextShadow.closePath();
+  ctxShadow.beginPath();
+    ctxShadow.moveTo(startX, startY - lineLong);
+    ctxShadow.lineTo(startX - lineLong, startY + lineLong);
+    ctxShadow.lineTo(startX + lineLong, startY + lineLong);
+    ctxShadow.lineTo(startX, startY - lineLong);
+    ctxShadow.stroke();
+  ctxShadow.closePath();
 }
 
 function drawCircle(e){
@@ -262,7 +310,7 @@ function drawCircleDown(e){
 }
 
 function drawCircleMove(e){
-  contextShadow.clearRect(0, 0, canvas.width, canvas.height);
+  ctxShadow.clearRect(0, 0, canvas.width, canvas.height);
   // if we're not dragging, just return
   if (!paint) {
     return;
@@ -271,35 +319,28 @@ function drawCircleMove(e){
 
   lineLong = (Math.sqrt((startX-mouseX)**2 + (startY-mouseY)**2));
 
-  contextShadow.beginPath();
-  contextShadow.arc(startX, startY, lineLong, 0, 2 * Math.PI, false);
-  contextShadow.stroke();
+  ctxShadow.beginPath();
+    ctxShadow.arc(startX, startY, lineLong, 0, 2 * Math.PI, false);
+  ctxShadow.stroke();
 }
 
 function drawCurved(){
   for(var i=0; i < clickX.length; i++) {    
-    context.beginPath();
-    if(clickDrag[i] && i){
-      context.moveTo(clickX[i-1], clickY[i-1]);
-     }else{
-       context.moveTo(clickX[i]-1, clickY[i]);
-     }
-     context.lineTo(clickX[i], clickY[i]);
-     context.closePath();
-     context.stroke();
+    ctx.beginPath();
+      if(clickDrag[i] && i){
+        ctx.moveTo(clickX[i-1], clickY[i-1]);
+      }else{
+       ctx.moveTo(clickX[i]-1, clickY[i]);
+      }
+      ctx.lineTo(clickX[i], clickY[i]);
+    ctx.closePath();
+    ctx.stroke();
   }
-}
-
-function drawLine(){
-  context.beginPath();
-  context.moveTo(clickX[clickX.length-1], clickY[clickY.length-1]);
-  context.lineTo(clickX[clickX.length-2], clickY[clickY.length-2]);
-  context.stroke();
 }
 
 function drawNotLine(){
   clearHistory();
-  context.strokeStyle = colorBefore;
+  ctx.strokeStyle = colorBefore;
   isLine = false;
 }
 
@@ -311,7 +352,7 @@ function clearHistory(){
 
 function onColorChange(color) {
   clearHistory();
-  context.strokeStyle = color.hexString; 
+  ctx.strokeStyle = color.hexString; 
 }
 
 ////////Used with some changes///////////// http://jsbin.com/dulifezi/2/edit 
@@ -352,8 +393,8 @@ function rangeSlider(id, onDrag) {
 }
 
 rangeSlider('range-slider', function(value) {
-  context.lineWidth = value;
-  contextShadow.lineWidth = value;
+  ctx.lineWidth = value;
+  ctxShadow.lineWidth = value;
   clearHistory();
 });
 /////////////////////////////////////// End of StackOwerflow user code)
