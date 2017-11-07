@@ -85,6 +85,11 @@ canvas.addEventListener('mouseleave',function(e){
   paint = false;
 });
 
+canvasShadow.addEventListener('mouseleave',function(e){
+  paint = false;
+  ctxShadow.clearRect(0, 0, canvas.width, canvas.height);
+});
+
 canvasShadow.addEventListener('mousedown',function (e) {
   switch (drawType){
     case 'Triangle':
@@ -158,9 +163,8 @@ canvasShadow.addEventListener('mouseup', function(e){
       startY = mouseY;
       break;
   }
-  //paint = false;
+  paint = false;
 });
-
 
 clearButton.addEventListener('click', function(){
   ctxShadow.clearRect(0, 0, canvasShadow.width, canvasShadow.height);
