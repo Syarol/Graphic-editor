@@ -15,8 +15,10 @@ var isLine = false;
 var drawType = '';
 var lineLong;
 var emptyVar;
+var savedImages = [];
+var removedImages = [];
+var lineWidthBefore;
 
-var clearButton = document.getElementById("clear-button");
 var chooseRectangle = document.getElementById("rectangle");
 var chooseLine = document.getElementById("line");
 var chooseCurvedLine = document.getElementById("curved");
@@ -24,6 +26,9 @@ var chooseTriangle = document.getElementById("triangle");
 var chooseCircle = document.getElementById("circle");
 var colorButton = document.getElementById('color-button');
 var eraser = document.getElementById("eraser");
+var clearButton = document.getElementById("clear-button");
+var undoButton = document.getElementById("undo-button");
+var redoButton = document.getElementById("redo-button");
 var save = document.getElementById("save");
 var colorBefore;
 
@@ -136,7 +141,6 @@ canvasShadow.addEventListener('mouseup', function(e){
   switch (drawType){
     case 'Triangle':
       lineLong = Math.sqrt((startX-mouseX)**2 + (startY-mouseY)**2)/2;
-
       ctx.beginPath();
       ctx.moveTo(startX, startY - lineLong);
       ctx.lineTo(startX - lineLong, startY + lineLong);
@@ -203,6 +207,19 @@ colorButton.addEventListener('click', function(){
   colorWheelElement.classList.toggle('colorWheelClose');
 });
 
+undoButton.addEventListener('click', function(){
+  saveDrawProperties();
+  onUndoCanvas();
+  backDrawProperties();
+});
+
+redoButton.addEventListener('click', function(){
+  saveDrawProperties();
+  onRedoCanvas();
+  backDrawProperties();
+});
+
+
 eraser.addEventListener('click', function(){
   eraserCanvas();
 });
@@ -215,7 +232,7 @@ function eraserCanvas(){
   mainShadow.style.visibility = 'hidden';
   clearHistory();
   isLine = false;
-  colorBefore = ctx.strokeStyle;
+  saveDrawProperties();
   ctx.strokeStyle = 'white';
   draw = drawCurved;
 }
@@ -250,7 +267,7 @@ function drawRectangleMove(e) {
 }
 /////////////
 function drawLine(){
-  ctx.strokeStyle = colorBefore;
+  backDrawProperties();
   clearHistory();
 
   startX = mouseX = emptyVar;
@@ -344,7 +361,7 @@ function drawCurved(){
 
 function drawNotLine(){
   clearHistory();
-  ctx.strokeStyle = colorBefore;
+  backDrawProperties();
   isLine = false;
 }
 
@@ -402,4 +419,74 @@ rangeSlider('range-slider', function(value) {
   clearHistory();
 });
 /////////////////////////////////////// End of StackOwerflow user code)
+
+function saveDrawProperties(){
+  lineWidthBefore = ctx.lineWidth;
+  colorBefore = ctx.strokeStyle;
+}
+
+function backDrawProperties(){
+  ctx.strokeStyle = colorBefore;
+  ctx.lineJoin = "round";
+  ctx.lineWidth = lineWidthBefore;
+}
+
+function onUndoCanvas () {  
+  //save the current canvas in redo array
+  removeImage();
+  canvas.width = canvas.width;
+  //create an image object and paint 
+  var imageObj = document.createElement('img');
+  imageObj.onload = function(){
+      ctx.drawImage(imageObj, 0, 0);
+  };
+  //get from array the source for the image object 
+  imageObj.src = savedImages.pop();
+  //if the stack is empty then disable the undo button
+  if (savedImages.length === 0) {
+    //undoButton.disable();
+  }
+  clearHistory();
+}
+
+function onRedoCanvas() {
+  //save the current canvas in undo array
+  saveImage();
+  //clear the canvas
+  canvas.width = canvas.width;
+  //create an image object and paint 
+  var imageObj = document.createElement('img');
+  imageObj.onload = function(){
+    ctx.drawImage(imageObj, 0, 0);
+  };
+  //get from array the source for the image object 
+  imageObj.src = removedImages.pop();
+  //if the stack is empty then disable the redo button
+  if (removedImages.length === 0) {
+    //redoButton.disable();
+  }
+  clearHistory();
+}
+
+function removeImage(){
+  //save the canvas image to redo array
+  var imgSrc = canvas.toDataURL("image/png");
+  removedImages.push(imgSrc);
+  //redoButton.enable();    
+}
+
+function saveImage(){
+  //save the canvas image to undo array 
+  var imgSrc = canvas.toDataURL("image/png");
+  savedImages.push(imgSrc);
+  //undoButton.enable();    
+}
+
+canvas.addEventListener('mousedown', function() {     
+  saveImage();
+});
+
+canvasShadow.addEventListener('mousedown', function() {     
+  saveImage();
+});
 
