@@ -69,6 +69,7 @@ canvas.addEventListener('mousedown',function(e){
   mousePos(e);
   addClick(mouseX,mouseY,false);
   draw();
+  saveImage();
 });
 
 canvas.addEventListener('mousemove',function(e){
@@ -98,15 +99,16 @@ canvasShadow.addEventListener('mouseleave',function(e){
 canvasShadow.addEventListener('mousedown',function (e) {
   switch (drawType){
     case 'Triangle':
-      drawTriangleDown(e);
+      drawCloseFigureDown(e);
       break;
     case 'Rectangle':
-      drawRectangleDown(e);
+      drawCloseFigureDown(e);
       break;
     case 'Circle':
-      drawCircleDown(e);
+      drawCloseFigureDown(e);
       break;
   }
+  saveImage();
 });
 
 canvasShadow.addEventListener('click',function(e){
@@ -118,6 +120,12 @@ canvasShadow.addEventListener('click',function(e){
       ctx.stroke();
       break;
   }
+});
+
+canvasShadow.addEventListener('dblclick', function(){
+  paint = false;
+  clearHistory();
+  startX = startY = emptyVar;
 });
 
 canvasShadow.addEventListener('mousemove',function (e) {
@@ -132,6 +140,7 @@ canvasShadow.addEventListener('mousemove',function (e) {
       drawCircleMove(e);
       break;
     case 'Line':
+      paint=true;
       drawLineMove(e);
       break;
   }
@@ -178,7 +187,8 @@ clearButton.addEventListener('click', function(){
 
 chooseRectangle.addEventListener('click', function(e){
   mainShadow.style.visibility = 'visible';
-  drawRectangle(e);
+  drawNotLine();
+  drawType = 'Rectangle';
 });
 
 chooseLine.addEventListener('click', function(){
@@ -194,12 +204,14 @@ chooseCurvedLine.addEventListener('click',function(){
 
 chooseTriangle.addEventListener('click', function(e){
   mainShadow.style.visibility = 'visible';
-  drawTriangle(e);
+  drawNotLine();
+  drawType = 'Triangle';
 });
 
 chooseCircle.addEventListener('click', function(e){
   mainShadow.style.visibility = 'visible';
-  drawCircle(e);
+  drawNotLine();
+  drawType = 'Circle';
 });
 
 colorButton.addEventListener('click', function(){
@@ -244,12 +256,7 @@ function saveCanvas(){
   link.click();
 }
 
-function drawRectangle(e){
-  drawNotLine();
-  drawType = 'Rectangle';
-}
-
-function drawRectangleDown(e) {
+function drawCloseFigureDown(e) {
   mousePos(e);
   startX = mouseX;
   startY = mouseY;
@@ -288,18 +295,6 @@ function drawLineMove(e){
   ctxShadow.stroke();
 }
 ////////////////
-function drawTriangle(e){
-  drawNotLine();
-  drawType = 'Triangle';
-}
-
-function drawTriangleDown(e) {
-  mousePos(e);
-  startX = mouseX;
-  startY = mouseY;
-  paint = true;
-}
-
 function drawTriangleMove(e) {
   ctxShadow.clearRect(0, 0, canvas.width, canvas.height);
   // if we're not dragging, just return
@@ -316,18 +311,6 @@ function drawTriangleMove(e) {
     ctxShadow.lineTo(startX, startY - lineLong);
     ctxShadow.stroke();
   ctxShadow.closePath();
-}
-
-function drawCircle(e){
-  drawNotLine();
-  drawType = 'Circle';
-}
-
-function drawCircleDown(e){
-  mousePos(e);
-  startX = mouseX;
-  startY = mouseY;
-  paint = true;
 }
 
 function drawCircleMove(e){
@@ -430,6 +413,9 @@ function backDrawProperties(){
   ctx.lineJoin = "round";
   ctx.lineWidth = lineWidthBefore;
 }
+//disable Undo/Redo buttons on Start
+undoButton.setAttribute("disabled", "disabled");
+redoButton.setAttribute("disabled", "disabled");
 
 function onUndoCanvas () {  
   //save the current canvas in redo array
@@ -444,9 +430,10 @@ function onUndoCanvas () {
   imageObj.src = savedImages.pop();
   //if the stack is empty then disable the undo button
   if (savedImages.length === 0) {
-    //undoButton.disable();
+    undoButton.setAttribute("disabled", "disabled");
   }
   clearHistory();
+  startX = startY = emptyVar;
 }
 
 function onRedoCanvas() {
@@ -463,30 +450,24 @@ function onRedoCanvas() {
   imageObj.src = removedImages.pop();
   //if the stack is empty then disable the redo button
   if (removedImages.length === 0) {
-    //redoButton.disable();
+    redoButton.setAttribute("disabled", "disabled");
   }
   clearHistory();
+  startX = startY = emptyVar;
 }
 
 function removeImage(){
   //save the canvas image to redo array
   var imgSrc = canvas.toDataURL("image/png");
   removedImages.push(imgSrc);
-  //redoButton.enable();    
+  redoButton.removeAttribute("disabled");    
 }
 
 function saveImage(){
   //save the canvas image to undo array 
   var imgSrc = canvas.toDataURL("image/png");
   savedImages.push(imgSrc);
-  //undoButton.enable();    
+  undoButton.removeAttribute("disabled");    
 }
 
-canvas.addEventListener('mousedown', function() {     
-  saveImage();
-});
-
-canvasShadow.addEventListener('mousedown', function() {     
-  saveImage();
-});
 
