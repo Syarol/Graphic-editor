@@ -10,7 +10,6 @@ var mouseX, mouseY;
 var startX, startY;
 var clickX = [], clickY = [], clickDrag = [];
 var paint = false;
-var draw = drawCurved;
 var isLine = false;
 var drawType = '';
 var lineLong;
@@ -19,6 +18,7 @@ var savedImages = [];
 var removedImages = [];
 var lineWidthBefore;
 
+var chooseNotDraw = document.getElementById("not-draw");
 var chooseRectangle = document.getElementById("rectangle");
 var chooseLine = document.getElementById("line");
 var chooseCurvedLine = document.getElementById("curved");
@@ -64,11 +64,30 @@ function addClick(mouseX, mouseY, dragging){
   clickDrag.push(dragging);
 }
 
+function clearHistory(){
+  clickX=[];
+  clickY=[];
+  clickDrag=[];
+}
+
+function onColorChange(color) {
+  clearHistory();
+  ctx.strokeStyle = color.hexString; 
+}
+
+document.addEventListener("DOMContentLoaded", function(){
+  saveDrawProperties();
+});
+
 canvas.addEventListener('mousedown',function(e){
   paint = true;
   mousePos(e);
   addClick(mouseX,mouseY,false);
-  draw();
+  switch (drawType){
+    case 'Curved':
+      drawCurved(e);
+      break;
+  }
   saveImage();
 });
 
@@ -77,7 +96,11 @@ canvas.addEventListener('mousemove',function(e){
     if (paint) {
       mousePos(e);
       addClick(mouseX, mouseY, true);
-      draw();
+      switch (drawType){
+        case 'Curved':
+          drawCurved(e);
+          break;
+      }
     }
   }
 });
@@ -124,7 +147,7 @@ canvasShadow.addEventListener('click',function(e){
 
 canvasShadow.addEventListener('dblclick', function(){
   paint = false;
-  clearHistory();
+  //clearHistory();
   startX = startY = emptyVar;
 });
 
@@ -179,6 +202,26 @@ canvasShadow.addEventListener('mouseup', function(e){
   paint = false;
 });
 
+//Undo event on Backspace press
+window.onkeydown = function(e){
+  var code = e.keyCode ? e.keyCode : e.which;
+  if (code === 8){
+    if (savedImages.length > 0) {
+      onUndoCanvas();
+    } else if (savedImages.length < 1) {
+      backDrawProperties();
+      ctxShadow.clearRect(0, 0, canvasShadow.width, canvasShadow.height);
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+  } 
+};
+
+chooseNotDraw.addEventListener('click', function(){
+  drawType = '';
+  paint = false;
+  clearHistory();
+});
+
 clearButton.addEventListener('click', function(){
   ctxShadow.clearRect(0, 0, canvasShadow.width, canvasShadow.height);
   ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -193,13 +236,19 @@ chooseRectangle.addEventListener('click', function(e){
 
 chooseLine.addEventListener('click', function(){
   mainShadow.style.visibility = 'visible'; 
-  drawLine();
+  clearHistory();
+
+  startX = mouseX = emptyVar;
+  startY = mouseY = emptyVar;
+
+  isLine = true;
+  drawType = 'Line';
 });
 
 chooseCurvedLine.addEventListener('click',function(){
   mainShadow.style.visibility = 'hidden';
   drawNotLine();
-  draw = drawCurved;
+  drawType = 'Curved';
 });
 
 chooseTriangle.addEventListener('click', function(e){
@@ -233,6 +282,7 @@ redoButton.addEventListener('click', function(){
 
 
 eraser.addEventListener('click', function(){
+  mainShadow.style.visibility = 'hidden';
   eraserCanvas();
 });
 
@@ -241,12 +291,10 @@ save.addEventListener('click', function(){
 });
 
 function eraserCanvas(){
-  mainShadow.style.visibility = 'hidden';
-  clearHistory();
-  isLine = false;
+  drawNotLine();
   saveDrawProperties();
   ctx.strokeStyle = 'white';
-  draw = drawCurved;
+  drawType = 'Curved';
 }
 
 function saveCanvas(){
@@ -273,17 +321,6 @@ function drawRectangleMove(e) {
   ctxShadow.strokeRect(startX, startY, mouseX - startX, mouseY - startY);
 }
 /////////////
-function drawLine(){
-  backDrawProperties();
-  clearHistory();
-
-  startX = mouseX = emptyVar;
-  startY = mouseY = emptyVar;
-
-  isLine = true;
-  drawType = 'Line';
-}
-
 function drawLineMove(e){
   ctxShadow.clearRect(0, 0, canvas.width, canvas.height);
  
@@ -337,8 +374,10 @@ function drawCurved(){
        ctx.moveTo(clickX[i]-1, clickY[i]);
       }
       ctx.lineTo(clickX[i], clickY[i]);
+      ctx.addHitRegion({id:'curve',cursor:'pointer'});
     ctx.closePath();
     ctx.stroke();
+    
   }
 }
 
@@ -346,17 +385,6 @@ function drawNotLine(){
   clearHistory();
   backDrawProperties();
   isLine = false;
-}
-
-function clearHistory(){
-  clickX=[];
-  clickY=[];
-  clickDrag=[];
-}
-
-function onColorChange(color) {
-  clearHistory();
-  ctx.strokeStyle = color.hexString; 
 }
 
 ////////Used with some changes///////////// http://jsbin.com/dulifezi/2/edit 
@@ -429,6 +457,7 @@ function onUndoCanvas () {
   //get from array the source for the image object 
   imageObj.src = savedImages.pop();
   //if the stack is empty then disable the undo button
+  console.log(savedImages.length);  
   if (savedImages.length === 0) {
     undoButton.setAttribute("disabled", "disabled");
   }
@@ -465,9 +494,10 @@ function removeImage(){
 
 function saveImage(){
   //save the canvas image to undo array 
-  var imgSrc = canvas.toDataURL("image/png");
-  savedImages.push(imgSrc);
-  undoButton.removeAttribute("disabled");    
+  if (drawType !=''){
+    var imgSrc = canvas.toDataURL("image/png");
+    savedImages.push(imgSrc);
+    undoButton.removeAttribute("disabled");    
+  }
 }
-
 

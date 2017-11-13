@@ -73,7 +73,7 @@ button p{
 }
 
 .range {
-	top: 80%;
+	top: 91%;
 	left: 2%;
   	width:15%;
   	height:20px;
@@ -106,6 +106,9 @@ button p{
 	top: 5%;
 	z-index: 100;
 	transition: 2s;
+	-webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;	
 }
 
 .colorWheelOpen{
