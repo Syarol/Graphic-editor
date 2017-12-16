@@ -16,13 +16,13 @@ function Line(bezXStart, bezYStart, mouseX, mouseY){
   this.bezXFinish = mouseX;
   this.bezYFinish = mouseY;
   return this;
-};
+}
 
 function Point(x,y){
   this.x = x;
   this.y = y;
   return this;
-};
+}
 
 function Circle(point, radius) {
   this.point = point;
@@ -30,70 +30,72 @@ function Circle(point, radius) {
   this.isInside = function (p) {
     return Math.pow(p.x - point.x, 2) + Math.pow(p.y - point.y, 2) < Math.pow(radius, 2); 
   };
-  this.isDragging = false;
   return this;
-};
+}
 
 canvasShadow.addEventListener('click', drawBezierSFP);
 
-canvasShadow.addEventListener('mousedown', function(e){
-  console.log("down");
-  var p = new Point(mouseX,mouseY);
-  for (i = 0; i < j/*CPQ.length*/; i++) {
-    switch (drawType){
-      case 'dragBezier':
-        if (CPQ[j-1].isInside(p)){
-          CPQ[j-1].isDragging = true;
-          console.log('fd');
-          startDragging(e, j-1);
-        }
-      }
-      break;
-  }
+//var yio = 0;
 
+canvasShadow.addEventListener('mousedown', function(e){
+  var p = new Point(mouseX,mouseY);
+  searchPoint : for (var r = 0; r < CPQ.length; r++) {
+    if (drawType =='dragBezier' && CPQ[r].isInside(p)){
+      startDragging(e, r);
+      break searchPoint;
+    }else{
+      //yio++;
+    }
+  }
+  /*if (yio == CPQ.length){
+    drawType = 'Bezier';
+  };*/
 });
 
 canvasShadow.addEventListener('mousemove', function(e){
   var p = new Point(mouseX,mouseY);
-  //for (i = 0; i < CPQ.length; i++) {
-    if (j > 0){
-    switch (drawType){
-      case 'Bezier':
-        if(CPQ[j-1].isInside(p)){
-          drawType = 'dragBezier';
-          console.log("inside");
-        } 
-        break;
-      case 'dragBezier':
-        if(CPQ[j-1].isInside(p)){
-          //if (CPQ[i].isDragging) {
-            console.log("inside2");
-            drag(e,j-1);
-          //}
-        }else{
-          drawType = 'Bezier';
-          console.log("outside");
-        }
-        break;
+  if (j > 0){
+    for (i = 0; i < CPQ.length; i++) {
+      switch (drawType){
+        case 'Bezier':
+          if(CPQ[i].isInside(p)){
+            drawType = 'dragBezier';
+          } 
+          break;
+        case 'dragBezier':
+          if(CPQ[i].isInside(p)){
+              drag(e,i);
+              break;
+          }
+          break;
+      }
     }
-    }
-  //}
+  }
 });
 
 canvasShadow.addEventListener('mouseup', stopDragging);
 
 canvasShadow.addEventListener('mouseout', stopDragging);
 
+//Save drawed curve on main canvas
 canvasShadow.addEventListener('dblclick', function(){
   bezXStart = bezYStart = undefined;
-  if (j != 0) {
-    console.log(j);
-    ctx.beginPath();
-        ctx.moveTo(bezierSFP[j-1].bezXStart, bezierSFP[j-1].bezYStart);
-        ctx.quadraticCurveTo(CPQ[j-1].point.x, CPQ[j-1].point.y, bezierSFP[j-1].bezXFinish, bezierSFP[j-1].bezYFinish);
-    ctx.stroke();
+  if (j !== 0) {
+    for (var k = 0; k < CPQ.length; k++) {
+        ctx.beginPath();
+          ctx.moveTo(bezierSFP[k].bezXStart, bezierSFP[k].bezYStart);
+          ctx.quadraticCurveTo(CPQ[k].point.x, CPQ[k].point.y, bezierSFP[k].bezXFinish, bezierSFP[k].bezYFinish);
+        ctx.stroke();
+      }
     ctxShadow.clearRect(0, 0, canvas.width, canvas.height);
   }
+  //clear arrays
+  CPQ.splice(0, CPQ.length);
+  bezierSFP.splice(0, bezierSFP.length);
+  //clear index
+  j = 0;
+  //return drawType to primary 
+  drawType = 'Bezier';
 });
 
 chooseBezier.addEventListener('click',function(){
@@ -106,9 +108,7 @@ chooseBezier.addEventListener('click',function(){
 
 function startDragging(e, k) {
   mousePos(e);
-    deltaCenter = new Point(mouseX - CPQ[k].point.x, mouseY - CPQ[k].point.y); 
-  console.log("I'm Start!");
-  //canvasShadow.addEventListener('mousemove', drag(e, k));
+  deltaCenter = new Point(mouseX - CPQ[k].point.x, mouseY - CPQ[k].point.y); 
 }
 
 function drag(e, i) {
@@ -118,34 +118,33 @@ function drag(e, i) {
     CPQ[i].point.x = (mouseX - deltaCenter.x);
     CPQ[i].point.y = (mouseY - deltaCenter.y);
 
-      ctxShadow.clearRect(0, 0, canvas.width, canvas.height);
-      ctxShadow.beginPath();
-        ctxShadow.moveTo(bezierSFP[i].bezXStart, bezierSFP[i].bezYStart);
-        ctxShadow.quadraticCurveTo(CPQ[i].point.x, CPQ[i].point.y, bezierSFP[i].bezXFinish, bezierSFP[i].bezYFinish);
-      ctxShadow.stroke();
-
-    drawCircle(CPQ[i]);   
+    ctxShadow.clearRect(0, 0, canvas.width, canvas.height);
+    for (var k = 0; k < CPQ.length; k++) {
+      if (k != i){
+        ctxShadow.beginPath();
+          ctxShadow.moveTo(bezierSFP[k].bezXStart, bezierSFP[k].bezYStart);
+          ctxShadow.quadraticCurveTo(CPQ[k].point.x, CPQ[k].point.y, bezierSFP[k].bezXFinish, bezierSFP[k].bezYFinish);
+        ctxShadow.stroke();
+        drawCircle(CPQ[k]); 
+      } else{
+        ctxShadow.beginPath();
+          ctxShadow.moveTo(bezierSFP[i].bezXStart, bezierSFP[i].bezYStart);
+          ctxShadow.quadraticCurveTo(CPQ[i].point.x, CPQ[i].point.y, bezierSFP[i].bezXFinish, bezierSFP[i].bezYFinish);
+        ctxShadow.stroke(); 
+        drawCircle(CPQ[i]); 
+      }
+    }
+      
   }
 }
 
+
 function stopDragging(e) {
-  switch(drawType){
-    case 'dragBezier':
-      deltaCenter = null;
-      for (var i = 0; i < CPQ.length; i++) {
-        if(CPQ[i].isDragging){
-          CPQ[i].isDragging = false;
-          console.log(CPQ[i].isDragging);
-        } 
-      }
-      //canvasShadow.removeEventListener('mousemove', drag);
-      break;
-  }
+  if (drawType == 'dragBezier') deltaCenter = null;
 }
 
 //Draw Control Circle
 function drawCircle(circle) {
-  //ctxShadow.clearRect(0, 0, canvas.width, canvas.height);
   ctxShadow.beginPath();
     ctxShadow.arc(circle.point.x, circle.point.y, circle.radius, 0, Math.PI*2, true);
   ctxShadow.fill();
@@ -177,7 +176,7 @@ function drawBezierSFP(e){
 
         drawCircle(CPQ[j]);
        
-        j++;   
+        j++; 
       }
       break;
   }

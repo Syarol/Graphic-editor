@@ -127,3 +127,13 @@ button p{
 .colorWheelClose{
 	left: 110%;
 }
+
+.contact-me{
+	position: absolute;
+	display: flex;
+	height: 20px;
+	min-width: 20%;
+	bottom: 0;
+	right: 0;
+	color: grey;
+}

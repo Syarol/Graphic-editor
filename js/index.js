@@ -21,7 +21,6 @@ var chooseNotDraw = document.getElementById("not-draw");
 var chooseRectangle = document.getElementById("rectangle");
 var chooseLine = document.getElementById("line");
 var chooseCurvedLine = document.getElementById("curved");
-/*var chooseBezier = document.getElementById("bezier");*/
 var chooseTriangle = document.getElementById("triangle");
 var chooseCircle = document.getElementById("circle");
 var colorButton = document.getElementById('color-button');
@@ -35,10 +34,6 @@ var colorBefore;
 
 var density = 50;
 var timeout;
-/*var bezXStart, bezYStart;
-var bezierCP = [];
-var j = 0;
-var SPX, SPY, FPX, FPY =50;*/
 
 var wheel = {
     width: 320,
@@ -120,141 +115,12 @@ canvasShadow.addEventListener('click',function(e){
         ctx.lineTo(mouseX, mouseY);
       ctx.stroke();
       break;
-    /*case 'Bezier':
-      if (bezXStart == undefined && bezYStart == undefined){
-        bezXStart = mouseX;
-        bezYStart = mouseY;
-      } else {
-        ctxShadow.beginPath();
-          ctxShadow.moveTo(bezXStart, bezYStart);
-          drawCircle(circle1);
-        drawCircle(circle2);
-          ctxShadow.bezierCurveTo(SPX, SPY, FPX, FPY, mouseX, mouseY);
-        ctxShadow.stroke();
-        bezierCP[j] = new Bezier(bezXStart, bezYStart, SPX, SPY, FPX, FPY, mouseX, mouseY);
-          console.log(bezierCP[j].bezXFinish);
-          
-        bezXStart = mouseX;
-        bezYStart = mouseY;
-
-        ctxShadow.clearRect(0, 0, canvas.width, canvas.height);
-        for (var i = 0; i <= j; i++) {
-          console.log(bezierCP[i].FPY);
-          ctxShadow.beginPath();
-            ctxShadow.moveTo(bezierCP[i].bezXStart, bezierCP[i].bezYStart);
-            ctxShadow.bezierCurveTo(bezierCP[i].SPX, bezierCP[i].SPY, bezierCP[i].FPX, bezierCP[i].FPY, bezierCP[i].mouseX, bezierCP[i].mouseY);
-          ctxShadow.stroke();
-        }
-        
-        j++;
-      }
-      break;*/
   }
 });
-
-/*var Bezier = function(bezXStart, bezYStart, SPX, SPY, FPX, FPY, mouseX, mouseY){
-  this.bezXStart = bezXStart;
-  this.bezYStart = bezYStart;
-  this.SPX = SPX;
-  this.SPY = SPY;
-  this.FPX = FPX;
-  this.FPY = FPY;
-  this.bezXFinish = mouseX;
-  this.bezYFinish = mouseY;
-  return this;
-}
-/////////////
-window.onload = function() {
-    drawCircle(circle1);
-    drawCircle(circle2);
-    canvasShadow.addEventListener('mousedown', startDragging);
-    canvasShadow.addEventListener('mousemove', drag, false);
-    canvasShadow.addEventListener('mouseup', stopDragging);
-    canvasShadow.addEventListener('mouseout', stopDragging);
-};
-
-var Point = function(x,y){
-  this.x = x;
-  this.y = y;
-  return this;
-};
-
-var Circle = function (point, radius) {
-    this.point = point;
-    this.radius = radius;
-    this.isInside = function (p) {
-      return Math.pow(p.x - point.x, 2) + Math.pow(p.y - point.y, 2) < Math.pow(radius, 2); 
-    };
-    return this;
-};
-
-var draggableEl;
-
-function startDragging(e) {
-  mousePos(e);
-    var p = new Point(mouseX, mouseY);
-    if(circle1.isInside(p)) {
-        deltaCenter = new Point(p.x - circle1.point.x, p.y - circle1.point.y);
-        draggableEl = 1;
-    }
-    if(circle2.isInside(p)) {
-        deltaCenter = new Point(p.x - circle2.point.x, p.y - circle2.point.y);
-        draggableEl = 2;
-    }
-    canvasShadow.addEventListener('mousemove', drag);
-}
-
-function drag(e) {
-    //ctx.clearRect(0, 0, canvas.width, canvas.height);
-      if(deltaCenter !== null) {
-      mousePos(e);
-      if (draggableEl === 1){
-        circle1.point.x = (mouseX - deltaCenter.x);
-        circle1.point.y = (mouseY - deltaCenter.y);
-      }
-      if (draggableEl === 2){
-        circle2.point.x = (mouseX - deltaCenter.x);
-        circle2.point.y = (mouseY - deltaCenter.y); 
-      }    
-        drawCircle(circle1);
-        drawCircle(circle2);
-        bezierCP[j].SPX = circle1.point.x;
-        bezierCP[j].SPY = circle1.point.y;
-        bezierCP[j].FPX = circle2.point.x;
-        bezierCP[j].FPY = circle2.point.y;
-        console.log(bezierCP[j].FPY);
-    }
-}
-
-function stopDragging(e) {
-    deltaCenter = null;
-    canvasShadow.removeEventListener('mousemove', drag);
-}
-
-function drawCircle(circle) {
-    ctxShadow.clearRect(0, 0, canvas.width, canvas.height);
-    ctxShadow.beginPath();
-      ctxShadow.arc(circle1.point.x, circle1.point.y, circle1.radius, 0, Math.PI*2, true);
-    ctxShadow.fill();
-    ctxShadow.beginPath();
-    ctxShadow.arc(circle2.point.x, circle2.point.y, circle2.radius, 0, Math.PI*2, true);
-    ctxShadow.fill();
-    console.log(j);
-    bezierCP[j].SPX = circle1.point.x;
-        bezierCP[j].SPY = circle1.point.y;
-        bezierCP[j].FPX = circle2.point.x;
-        bezierCP[j].FPY = circle2.point.y;
-}
-
-var circle1 = new Circle(new Point(30, 40), 5);
-var circle2 = new Circle(new Point(70, 20), 5);
-var deltaCenter = null;*/
-//////////////
 
 canvasShadow.addEventListener('dblclick', function(){
   paint = false;
   startX = startY = undefined;
-  /*bezXStart = bezYStart = undefined;*/
 });
 
 canvasShadow.addEventListener('mousedown',function (e) {
@@ -288,15 +154,6 @@ canvasShadow.addEventListener('mousemove',function (e) {
       paint = true;
       drawLineMove(e);
       break;
-    /*case 'Bezier':
-      if ((bezXStart !== undefined) && (bezYStart !== undefined)){
-        //ctxShadow.clearRect(0, 0, canvas.width, canvas.height);
-        ctxShadow.beginPath();
-          ctxShadow.moveTo(bezXStart, bezYStart);
-          ctxShadow.bezierCurveTo(200, 50, 300, 50, mouseX, mouseY);
-        ctxShadow.stroke();
-      }
-      break;*/
   }
 });
 
@@ -395,15 +252,6 @@ chooseCurvedLine.addEventListener('click',function(){
   drawType = 'Curved';
 });
 
-/*chooseBezier.addEventListener('click',function(){
-  mainShadow.style.visibility = 'visible';
-  bezXStart = bezYStart = undefined;
-  drawNotLine();
-  clearHistory();
-  drawType = 'Bezier';
-  ctxShadow.clearRect(0, 0, canvas.width, canvas.height);
-});
-*/
 chooseTriangle.addEventListener('click', function(e){
   backDrawProperties();
   mainShadow.style.visibility = 'visible';
@@ -698,63 +546,3 @@ function saveImage(){
 function getRandomFloat(min, max) {
   return Math.random() * (max - min) + min;
 }
-//////////
-
-/*window.onload = function() {
-    drawCircle(circle);
-    canvasShadow.addEventListener('mousedown', startDragging);
-    //canvas.addEventListener('mousemove', drag, false);
-    canvasShadow.addEventListener('mouseup', stopDragging);
-    canvasShadow.addEventListener('mouseout', stopDragging);
-};
-
-var Point = function (x, y) {
-    this.x = x;
-    this.y = y;
-    return this;
-};
-
-var Circle = function (point, radius) {
-    this.point = point;
-    this.radius = radius;
-    this.isInside = function (pt) {
-      return Math.pow(pt.x - point.x, 2) + Math.pow(pt.y - point.y, 2) < Math.pow(radius, 2); 
-    };
-    return this;
-};
-
-function startDragging(e) {
-  mousePos(e);
-    var p = new Point(mouseX, mouseY);
-    if(circle.isInside(p)) {
-        deltaCenter = new Point(p.x - circle.point.x, p.y - circle.point.y);
-    }
-    canvasShadow.addEventListener('mousemove', drag);
-}
-
-function drag(e) {
-    //ctx.clearRect(0, 0, canvas.width, canvas.height);
-      if(deltaCenter !== null) {
-      mousePos(e);
-        circle.point.x = (mouseX - deltaCenter.x);
-        circle.point.y = (mouseY - deltaCenter.y);   
-        drawCircle(circle);
-
-    }
-}
-
-function stopDragging(e) {
-    deltaCenter = null;
-    canvasShadow.removeEventListener('mousemove', drag);
-}
-
-function drawCircle(circle) {
-    ctxShadow.clearRect(0, 0, canvas.width, canvas.height);
-    ctxShadow.beginPath();
-      ctxShadow.arc(circle.point.x, circle.point.y, circle.radius, 0, Math.PI*2, true);
-    ctxShadow.fill();
-}
-
-var circle = new Circle(new Point(30, 40), 5);
-var deltaCenter = null;*/
-
