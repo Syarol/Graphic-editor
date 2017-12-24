@@ -18,11 +18,11 @@ var removedImages = [];
 var lineWidthBefore;
 
 var chooseNotDraw = document.getElementById("not-draw");
-var chooseRectangle = document.getElementById("rectangle");
-var chooseLine = document.getElementById("line");
-var chooseCurvedLine = document.getElementById("curved");
-var chooseTriangle = document.getElementById("triangle");
-var chooseCircle = document.getElementById("circle");
+var chooseRectangle = document.getElementsByClassName("rectangle");
+var chooseLine = document.getElementsByClassName("line");
+var chooseCurvedLine = document.getElementsByClassName("curved");
+var chooseTriangle = document.getElementsByClassName("triangle");
+var chooseCircle = document.getElementsByClassName("circle");
 var colorButton = document.getElementById('color-button');
 var eraser = document.getElementById("eraser");
 var spray = document.getElementById("spray");
@@ -121,6 +121,7 @@ canvasShadow.addEventListener('click',function(e){
 canvasShadow.addEventListener('dblclick', function(){
   paint = false;
   startX = startY = undefined;
+  ctxShadow.clearRect(0, 0, canvas.width, canvas.height);
 });
 
 canvasShadow.addEventListener('mousedown',function (e) {
@@ -197,7 +198,7 @@ canvasShadow.addEventListener('mouseleave',function(e){
 
 window.onkeydown = function(e){
   var code = e.keyCode ? e.keyCode : e.which;
-  if ((code === 8) | (code === 90 && e.ctrlKey)){ //Undo event on Backspace press ot Ctrl+Z
+  if ((code === 8) || (code === 90 && e.ctrlKey)){ //Undo event on Backspace press ot Ctrl+Z
     if (savedImages.length > 0) {
       onUndoCanvas();
       backDrawProperties();
@@ -227,14 +228,22 @@ clearButton.addEventListener('click', function(){
   clearHistory();
 });
 
-chooseRectangle.addEventListener('click', function(e){
+for (var n = 0; n < chooseRectangle.length; n++) {
+  chooseRectangle[n].addEventListener('click', chooseDrawRectangle);
+}
+
+function chooseDrawRectangle(){
   backDrawProperties();
   mainShadow.style.visibility = 'visible';
   drawNotLine();
   drawType = 'Rectangle';
-});
+}
 
-chooseLine.addEventListener('click', function(){
+for (var n = 0; n < chooseLine.length; n++) {
+  chooseLine[n].addEventListener('click', chooseDrawLine);
+}
+
+function chooseDrawLine(){
   backDrawProperties();
   mainShadow.style.visibility = 'visible'; 
   clearHistory();
@@ -244,27 +253,39 @@ chooseLine.addEventListener('click', function(){
 
   isLine = true;
   drawType = 'Line';
-});
+}
 
-chooseCurvedLine.addEventListener('click',function(){
+for (var n = 0; n < chooseCurvedLine.length; n++) {
+  chooseCurvedLine[n].addEventListener('click', chooseDrawCurved);
+}
+
+function chooseDrawCurved(){
   mainShadow.style.visibility = 'hidden';
-  drawNotLine();
-  drawType = 'Curved';
-});
+    drawNotLine();
+    drawType = 'Curved';
+}
 
-chooseTriangle.addEventListener('click', function(e){
-  backDrawProperties();
-  mainShadow.style.visibility = 'visible';
-  drawNotLine();
-  drawType = 'Triangle';
-});
+for (var n = 0; n < chooseTriangle.length; n++) {
+  chooseTriangle[n].addEventListener('click', chooseDrawTriangle);
+}
 
-chooseCircle.addEventListener('click', function(e){
+function chooseDrawTriangle(){
   backDrawProperties();
-  mainShadow.style.visibility = 'visible';
-  drawNotLine();
-  drawType = 'Circle';
-});
+    mainShadow.style.visibility = 'visible';
+    drawNotLine();
+    drawType = 'Triangle';
+}
+
+for (var n = 0; n < chooseCircle.length; n++) {
+  chooseCircle[n].addEventListener('click', chooseDrawCircle);
+}
+
+function chooseDrawCircle(){
+  backDrawProperties();
+    mainShadow.style.visibility = 'visible';
+    drawNotLine();
+    drawType = 'Circle';
+}
 
 colorButton.addEventListener('click', function(){
   colorWheelElement.classList.toggle('colorWheelOpen');
@@ -546,3 +567,109 @@ function saveImage(){
 function getRandomFloat(min, max) {
   return Math.random() * (max - min) + min;
 }
+//////////
+var cml =  document.getElementById('context-menu-lines');
+var linesMenu = document.getElementById('lines-menu');
+var cmrf = document.getElementById('context-menu-right-figures');
+var rightFiguresMenu = document.getElementById('right-figures-menu');
+
+linesMenu.addEventListener("contextmenu",function(e){
+  e.preventDefault();
+  showContextMenu(e,cml);
+});
+
+rightFiguresMenu.addEventListener("contextmenu",function(e){
+  e.preventDefault();
+  showContextMenu(e,cmrf);
+});
+
+cml.addEventListener('click',function(){
+  hideContextMenu(this);
+});
+
+cmrf.addEventListener('click',function(){
+  hideContextMenu(this);
+});
+
+cml.addEventListener('mouseleave', function(){
+  hideContextMenu(this);
+});
+
+cmrf.addEventListener('mouseleave', function(){
+  hideContextMenu(this);
+});
+
+function hideContextMenu(el){
+  el.style.opacity = '0';
+  setTimeout(function(){
+    el.style.display = 'none';  
+  }, 500);
+}
+
+function showContextMenu(e,el){
+  el.style.left = e.pageX;
+  el.style.top = e.pageY;
+  el.style.opacity = '1';
+  el.style.display  = 'block';
+}
+
+var rfItems = document.getElementById('right-figures-items');
+var lItems = document.getElementById('lines-items');
+
+document.addEventListener("DOMContentLoaded", function(){
+  rfItems.children[0].style.display = 'none';
+  lItems.children[0].style.display = 'none';
+
+  rightFiguresMenu.classList.add('circle');
+  linesMenu.classList.add('curved');
+
+  onContextMenuChoose(rfItems, rightFiguresMenu);
+  onContextMenuChoose(lItems, linesMenu);
+
+});
+
+function onContextMenuChoose(item, menu){
+  for (var i = 0; i < item.children.length; i++) {
+    item.children[i].addEventListener('click', function(){
+      menu.children[0].innerHTML = this.innerHTML;//change text at button
+      this.style.display = 'none';
+
+      for (var h = 0; h < item.children.length; h++) {
+        if (menu.className == item.children[h].className){
+          item.children[h].style.display = 'block';  
+        }
+      }
+      
+      menu.className = '';
+      menu.classList.add(this.className);
+    });
+  }
+}
+
+rightFiguresMenu.addEventListener('click', function(){
+  switch(rightFiguresMenu.className){
+    case 'circle':
+      chooseDrawCircle();
+      break;
+    case 'rectangle':
+      chooseDrawRectangle();
+      break;
+    case 'triangle':
+      chooseDrawTriangle();
+      break;
+  }
+});
+
+linesMenu.addEventListener('click', function(){
+  switch(linesMenu.className){
+    case 'curved':
+      chooseDrawCurved();
+      break;
+    case 'line':
+      chooseDrawLine();
+      break;
+    case 'Quadratic':
+      chooseDrawQuadratic();
+      break;
+  }
+});
