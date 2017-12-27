@@ -149,9 +149,22 @@ li{
   padding-left:10px;
 }
 
-
 .items :hover{
   color: white;
   background:#9E9E9E;
   border-radius:2px;
+}
+
+#number-of-angles{
+	display: none;
+	margin-top: 2px;
+	margin-bottom: 3px;
+	width: 110px;
+	opacity: 1;
+}
+
+#number-of-angles:hover{
+	color: black;
+	background:white; 	
+  	border-radius: 0;
 }

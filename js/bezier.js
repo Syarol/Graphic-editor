@@ -1,4 +1,12 @@
+/**
+ * Simple Graphic Editor
+ *
+ * @Author Oleh Yaroshchuk 
+ */
 
+/**
+ * Global variables
+*/
 var mainShadow = document.getElementById('main-shadow');
 var canvasShadow = document.getElementById('canvas-shadow');
 var ctxShadow = document.getElementById('canvas-shadow').getContext("2d");
@@ -9,6 +17,10 @@ var QuadraticSFP = [];//Array for Start/Finish control points
 var j = 0, i = 0;
 var deltaCenter = null;
 var CPQ = [];//Control Point array for Quadratic Quadratic 
+
+/**
+ * Functions
+*/
 
 function Line(bezXStart, bezYStart, mouseX, mouseY){
   this.bezXStart = bezXStart;
@@ -31,72 +43,6 @@ function Circle(point, radius) {
     return Math.pow(p.x - point.x, 2) + Math.pow(p.y - point.y, 2) < Math.pow(radius, 2); 
   };
   return this;
-}
-
-canvasShadow.addEventListener('click', drawQuadraticSFP);
-
-canvasShadow.addEventListener('mousedown', function(e){
-  var p = new Point(mouseX,mouseY);
-  searchPoint : for (var r = 0; r < CPQ.length; r++) {
-    if (drawType =='dragQuadratic' && CPQ[r].isInside(p)){
-      startDragging(e, r);
-      break searchPoint;
-    }
-  }
-});
-
-canvasShadow.addEventListener('mousemove', function(e){
-  var p = new Point(mouseX,mouseY);
-  if (j > 0){
-    for (i = 0; i < CPQ.length; i++) {
-      switch (drawType){
-        case 'Quadratic':
-          if(CPQ[i].isInside(p)){
-            drawType = 'dragQuadratic';
-          } 
-          break;
-        case 'dragQuadratic':
-          if(CPQ[i].isInside(p)){
-              drag(e,i);
-              //break;
-          }
-          break;
-      }
-    }
-  }
-});
-
-canvasShadow.addEventListener('mouseup', stopDragging);
-
-canvasShadow.addEventListener('mouseout', stopDragging);
-
-//Save drawed curve on main canvas
-canvasShadow.addEventListener('dblclick', function(){
-  switch (drawType){
-    case 'dragQuadratic':
-      bezXStart = bezYStart = undefined;
-      if (j !== 0) {
-        for (var k = 0; k < CPQ.length; k++) {
-            ctx.beginPath();
-              ctx.moveTo(QuadraticSFP[k].bezXStart, QuadraticSFP[k].bezYStart);
-              ctx.quadraticCurveTo(CPQ[k].point.x, CPQ[k].point.y, QuadraticSFP[k].bezXFinish, QuadraticSFP[k].bezYFinish);
-            ctx.stroke();
-          }
-        ctxShadow.clearRect(0, 0, canvas.width, canvas.height);
-      }
-      //clear arrays
-      CPQ.splice(0, CPQ.length);
-      QuadraticSFP.splice(0, QuadraticSFP.length);
-      //clear index
-      j = 0;
-      //return drawType to primary 
-      drawType = 'Quadratic';
-      break;
-  }
-});
-
-for (var n = 0; n < chooseQuadratic.length; n++) {
-  chooseQuadratic[n].addEventListener('click',chooseDrawQuadratic);
 }
 
 function chooseDrawQuadratic(){
@@ -158,7 +104,7 @@ function drawQuadraticSFP(e){
         bezXStart = mouseX;
         bezYStart = mouseY;
       } else {//If Start Point already created, then create Finish Point
-        ctxShadow.beginPath();
+        ctxShadow.beginPath();//Create line between points
           ctxShadow.moveTo(bezXStart, bezYStart);
           ctxShadow.lineTo(mouseX, mouseY);
         ctxShadow.stroke();
@@ -180,3 +126,78 @@ function drawQuadraticSFP(e){
       break;
   }
 }
+
+/**
+ * Event Listeners
+*/
+
+document.addEventListener('DOMContentLoaded', function(){
+  for (var n = 0; n < chooseQuadratic.length; n++) {
+    chooseQuadratic[n].addEventListener('click',chooseDrawQuadratic);
+  }
+});
+
+canvasShadow.addEventListener('click', function(){
+  drawQuadraticSFP();// If 
+  //returnToQuadraticSFP();
+});
+
+canvasShadow.addEventListener('mousedown', function(e){
+  var p = new Point(mouseX,mouseY);
+  searchPoint : for (var r = 0; r < CPQ.length; r++) {
+    if (drawType =='dragQuadratic' && CPQ[r].isInside(p)){
+      startDragging(e, r);
+      break searchPoint;
+    }
+  }
+});
+
+canvasShadow.addEventListener('mousemove', function(e){
+  var p = new Point(mouseX,mouseY);
+  if (j > 0){
+    for (i = 0; i < CPQ.length; i++) {
+      switch (drawType){
+        case 'Quadratic':
+          if(CPQ[i].isInside(p)){
+            drawType = 'dragQuadratic';
+          } 
+          break;
+        case 'dragQuadratic':
+          if(CPQ[i].isInside(p)){
+              drag(e,i);
+              //break;
+          }
+          break;
+      }
+    }
+  }
+});
+
+canvasShadow.addEventListener('mouseup', stopDragging);
+
+canvasShadow.addEventListener('mouseout', stopDragging);
+
+//Save drawed curve on main canvas
+canvasShadow.addEventListener('dblclick', function(){
+  switch (drawType){
+    case 'dragQuadratic':
+      bezXStart = bezYStart = undefined;
+      if (j !== 0) {
+        for (var k = 0; k < CPQ.length; k++) {
+            ctx.beginPath();
+              ctx.moveTo(QuadraticSFP[k].bezXStart, QuadraticSFP[k].bezYStart);
+              ctx.quadraticCurveTo(CPQ[k].point.x, CPQ[k].point.y, QuadraticSFP[k].bezXFinish, QuadraticSFP[k].bezYFinish);
+            ctx.stroke();
+          }
+        ctxShadow.clearRect(0, 0, canvas.width, canvas.height);
+      }
+      //clear arrays
+      CPQ.splice(0, CPQ.length);
+      QuadraticSFP.splice(0, QuadraticSFP.length);
+      //clear index
+      j = 0;
+      //return drawType to primary 
+      drawType = 'Quadratic';
+      break;
+  }
+});
