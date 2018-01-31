@@ -9,121 +9,129 @@
 */
 var mainShadow = document.getElementById('main-shadow');
 var canvasShadow = document.getElementById('canvas-shadow');
-var ctxShadow = document.getElementById('canvas-shadow').getContext("2d");
-var chooseQuadratic = document.getElementsByClassName("Quadratic");
+var ctxShadow = document.getElementById('canvas-shadow').getContext('2d');
+var chooseQuadratic = document.getElementsByClassName('quadratic');
 
-var bezXStart, bezYStart;
 var QuadraticSFP = [];//Array for Start/Finish control points
-var j = 0, i = 0;
+var j = 0;
 var deltaCenter = null;
 var CPQ = [];//Control Point array for Quadratic Quadratic 
 
 /**
- * Functions
+ * Classes
 */
-
-function Line(bezXStart, bezYStart, mouseX, mouseY){
-  this.bezXStart = bezXStart;
-  this.bezYStart = bezYStart;
-  this.bezXFinish = mouseX;
-  this.bezYFinish = mouseY;
-  return this;
-}
-
-function Point(x,y){
-  this.x = x;
-  this.y = y;
-  return this;
-}
-
-function Circle(point, radius) {
-  this.point = point;
-  this.radius = radius;
-  this.isInside = function (p) {
-    return Math.pow(p.x - point.x, 2) + Math.pow(p.y - point.y, 2) < Math.pow(radius, 2); 
-  };
-  return this;
-}
-
-function chooseDrawQuadratic(){
-  mainShadow.style.visibility = 'visible';
-  bezXStart = bezYStart = undefined;
-  clearHistory();
-  drawType = 'Quadratic';
-  ctxShadow.clearRect(0, 0, canvas.width, canvas.height);
-}
-
-function startDragging(e, k) {
-  mousePos(e);
-  deltaCenter = new Point(mouseX - CPQ[k].point.x, mouseY - CPQ[k].point.y); 
-}
-
-function drag(e, i) {
-  if(deltaCenter !== null) {
-    mousePos(e);
-
-    CPQ[i].point.x = (mouseX - deltaCenter.x);
-    CPQ[i].point.y = (mouseY - deltaCenter.y);
-
-    ctxShadow.clearRect(0, 0, canvas.width, canvas.height);
-    for (var k = 0; k < CPQ.length; k++) {
-      if (k != i){
-        ctxShadow.beginPath();
-          ctxShadow.moveTo(QuadraticSFP[k].bezXStart, QuadraticSFP[k].bezYStart);
-          ctxShadow.quadraticCurveTo(CPQ[k].point.x, CPQ[k].point.y, QuadraticSFP[k].bezXFinish, QuadraticSFP[k].bezYFinish);
-        ctxShadow.stroke();
-        drawCircle(CPQ[k]); 
-      } else{
-        ctxShadow.beginPath();
-          ctxShadow.moveTo(QuadraticSFP[i].bezXStart, QuadraticSFP[i].bezYStart);
-          ctxShadow.quadraticCurveTo(CPQ[i].point.x, CPQ[i].point.y, QuadraticSFP[i].bezXFinish, QuadraticSFP[i].bezYFinish);
-        ctxShadow.stroke(); 
-        drawCircle(CPQ[i]); 
-      }
-    }     
+class LineB{
+  constructor(startX, startY, mouseX, mouseY){
+    this.bezXStart = startX;
+    this.bezYStart = startY;
+    this.bezXFinish = mouseX;
+    this.bezYFinish = mouseY;
+    return this;
   }
 }
 
-function stopDragging(e) {
-  if (drawType == 'dragQuadratic') deltaCenter = null;
+class Point{
+  constructor(x,y){
+    this.x = x;
+    this.y = y;
+    return this;
+  }
 }
 
-//Draw Control Circle
-function drawCircle(circle) {
-  ctxShadow.beginPath();
-    ctxShadow.arc(circle.point.x, circle.point.y, circle.radius, 0, Math.PI*2, true);
-  ctxShadow.fill();
-  ctxShadow.stroke();
+class CircleB{
+  constructor(point, radius) {
+    this.point = point;
+    this.radius = radius;
+    this.isInside = function (p) {
+      return Math.pow(p.x - point.x, 2) + Math.pow(p.y - point.y, 2) < Math.pow(radius, 2); 
+    };
+    return this;
+  }
+
+  //Draw Control Circle
+  static draw(circle){
+    ctxShadow.beginPath();
+      ctxShadow.arc(circle.point.x, circle.point.y, circle.radius, 0, Math.PI*2, true);
+    ctxShadow.fill();
+    ctxShadow.stroke();
+  }
 }
 
-//Draw Quadratic Start-Finish Points
-function drawQuadraticSFP(e){ 
-  switch (drawType){
-    case 'Quadratic':
-      if (bezXStart === undefined && bezYStart === undefined){ //If Start Point missing, then create
-        bezXStart = mouseX;
-        bezYStart = mouseY;
-      } else {//If Start Point already created, then create Finish Point
-        ctxShadow.beginPath();//Create line between points
-          ctxShadow.moveTo(bezXStart, bezYStart);
-          ctxShadow.lineTo(mouseX, mouseY);
-        ctxShadow.stroke();
+class Quadratic{
+  static choose(){
+    mainShadow.style.visibility = 'visible';
+    startX = startY = undefined;
+    drawType = 'Quadratic';
+    ctxShadow.clearRect(0, 0, canvas.width, canvas.height);
+  }
 
-        QuadraticSFP[j] = new Line(bezXStart, bezYStart, mouseX, mouseY);//Save Finish and Start points coordinates
+  //Draw Quadratic Start-Finish Points
+  static draw(){
+    switch (drawType){
+      case 'Quadratic':
+        if (startX === undefined && startY === undefined){ //If Start Point missing, then create
+          startX = mouseX;
+          startY = mouseY;
+        } else {//If Start Point already created, then create Finish Point
+          ctxShadow.beginPath();//Create line between points
+            ctxShadow.moveTo(startX, startY);
+            ctxShadow.lineTo(mouseX, mouseY);
+          ctxShadow.stroke();
 
-        bezXStart = mouseX;//Finish point for last = Start point for next
-        bezYStart = mouseY;
+          QuadraticSFP[j] = new LineB(startX, startY, mouseX, mouseY);//Save Finish and Start points coordinates
 
-        var CPX = (QuadraticSFP[j].bezXFinish + QuadraticSFP[j].bezXStart)/2;//X and Y coordinates of line center
-        var CPY = (QuadraticSFP[j].bezYFinish + QuadraticSFP[j].bezYStart)/2;  
+          startX = mouseX;//Finish point for last = Start point for next
+          startY = mouseY;
 
-        CPQ[j] = new Circle(new Point(CPX, CPY), 5);
+          var CPX = (QuadraticSFP[j].bezXFinish + QuadraticSFP[j].bezXStart)/2;//X and Y coordinates of line center
+          var CPY = (QuadraticSFP[j].bezYFinish + QuadraticSFP[j].bezYStart)/2;  
 
-        drawCircle(CPQ[j]);
-       
-        j++; 
-      }
-      break;
+          CPQ[j] = new CircleB(new Point(CPX, CPY), 5);
+
+          CircleB.draw(CPQ[j]);
+         
+          j++; 
+        }
+        break;
+    }
+  }
+
+  static onlyLine(context, i){
+    context.beginPath();
+      context.moveTo(QuadraticSFP[i].bezXStart, QuadraticSFP[i].bezYStart);
+      context.quadraticCurveTo(CPQ[i].point.x, CPQ[i].point.y, QuadraticSFP[i].bezXFinish, QuadraticSFP[i].bezYFinish);
+    context.stroke(); 
+  }
+}
+
+class Drag{
+  static start(e, k){
+    mousePos(e);
+    deltaCenter = new Point(mouseX - CPQ[k].point.x, mouseY - CPQ[k].point.y); 
+  }
+
+  static do(e, i){
+    if(deltaCenter !== null) {
+      mousePos(e);
+
+      CPQ[i].point.x = (mouseX - deltaCenter.x);
+      CPQ[i].point.y = (mouseY - deltaCenter.y);
+
+      ctxShadow.clearRect(0, 0, canvas.width, canvas.height);
+      for (var k = 0; k < CPQ.length; k++) {
+        if (k != i){
+          Quadratic.onlyLine(ctxShadow, k); 
+          CircleB.draw(CPQ[k]);
+        } else{
+          Quadratic.onlyLine(ctxShadow, i);
+          CircleB.draw(CPQ[i]);
+        }
+      }     
+    }
+  }
+
+  static stop(){
+    if (drawType == 'dragQuadratic') deltaCenter = null;
   }
 }
 
@@ -131,41 +139,39 @@ function drawQuadraticSFP(e){
  * Event Listeners
 */
 
-document.addEventListener('DOMContentLoaded', function(){
-  for (var n = 0; n < chooseQuadratic.length; n++) {
-    chooseQuadratic[n].addEventListener('click',chooseDrawQuadratic);
+document.addEventListener('DOMContentLoaded', () => {
+  for (let choosen of chooseQuadratic) {
+    choosen.addEventListener('click', Quadratic.choose);
   }
 });
 
-canvasShadow.addEventListener('click', function(){
-  drawQuadraticSFP();// If 
-  //returnToQuadraticSFP();
-});
+canvasShadow.onclick = function(){
+  Quadratic.draw();
+};
 
-canvasShadow.addEventListener('mousedown', function(e){
-  var p = new Point(mouseX,mouseY);
-  searchPoint : for (var r = 0; r < CPQ.length; r++) {
-    if (drawType =='dragQuadratic' && CPQ[r].isInside(p)){
-      startDragging(e, r);
+canvasShadow.addEventListener('mousedown', (e) => {
+  let p = new Point(mouseX,mouseY);
+  searchPoint : for (let controlPoint of CPQ) {
+    if (drawType == 'dragQuadratic' && controlPoint.isInside(p)){
+      Drag.start(e, CPQ.indexOf(controlPoint));
       break searchPoint;
     }
   }
 });
 
-canvasShadow.addEventListener('mousemove', function(e){
-  var p = new Point(mouseX,mouseY);
+canvasShadow.addEventListener('mousemove', (e) => {
+  let p = new Point(mouseX,mouseY);
   if (j > 0){
-    for (i = 0; i < CPQ.length; i++) {
+    for (let controlPoint of CPQ) {
       switch (drawType){
         case 'Quadratic':
-          if(CPQ[i].isInside(p)){
+          if(controlPoint.isInside(p)){
             drawType = 'dragQuadratic';
           } 
           break;
         case 'dragQuadratic':
-          if(CPQ[i].isInside(p)){
-              drag(e,i);
-              //break;
+          if(controlPoint.isInside(p)){
+            Drag.do(e, CPQ.indexOf(controlPoint));
           }
           break;
       }
@@ -173,22 +179,31 @@ canvasShadow.addEventListener('mousemove', function(e){
   }
 });
 
-canvasShadow.addEventListener('mouseup', stopDragging);
-
-canvasShadow.addEventListener('mouseout', stopDragging);
-
-//Save drawed curve on main canvas
-canvasShadow.addEventListener('dblclick', function(){
+canvasShadow.addEventListener('mouseup', () => {
   switch (drawType){
     case 'dragQuadratic':
-      bezXStart = bezYStart = undefined;
+      Drag.stop();
+      break;
+  }
+});
+
+canvasShadow.addEventListener('mouseout', () => {
+  switch (drawType){
+    case 'dragQuadratic':
+      Drag.stop();
+      break;
+  }
+});
+
+//Save drawed curve on main canvas
+canvasShadow.addEventListener('dblclick', () => {
+  switch (drawType){
+    case 'dragQuadratic':
+      startX = startY = undefined;
       if (j !== 0) {
         for (var k = 0; k < CPQ.length; k++) {
-            ctx.beginPath();
-              ctx.moveTo(QuadraticSFP[k].bezXStart, QuadraticSFP[k].bezYStart);
-              ctx.quadraticCurveTo(CPQ[k].point.x, CPQ[k].point.y, QuadraticSFP[k].bezXFinish, QuadraticSFP[k].bezYFinish);
-            ctx.stroke();
-          }
+          Quadratic.onlyLine(ctx, k);
+        }
         ctxShadow.clearRect(0, 0, canvas.width, canvas.height);
       }
       //clear arrays

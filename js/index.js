@@ -7,6 +7,7 @@
 /**
  * Global variables
 */
+
 var canvas = document.getElementById('canvas');
 var ctx = document.getElementById('canvas').getContext('2d');
 
@@ -18,12 +19,8 @@ var mouseX, //mouse X position
     mouseY; //mouse Y position
 var startX, 
     startY;
-var clickX = [], //array of clicks X position
-    clickY = [], //array of clicks Y position
-    clickDrag = []; 
 var paint = false;
-var isLine = false;
-var drawType = ''; 
+var drawType; 
 var lineLong;
 var savedImages = [];
 var removedImages = [];
@@ -39,7 +36,7 @@ var chooseLine = document.getElementsByClassName('line');
 var chooseCurvedLine = document.getElementsByClassName('curved');
 var colorButton = document.getElementById('color-button');
 var eraser = document.getElementById('eraser');
-var spray = document.getElementById('spray');
+var sprayButton = document.getElementById('spray');
 var clearButton = document.getElementById('clear-button');
 var undoButton = document.getElementById('undo-button');
 var redoButton = document.getElementById('redo-button');
@@ -47,199 +44,253 @@ var save = document.getElementById('save');
 var colorBefore;
 var numberOfSides;
 
-var DENSITY = 50; //densuty of spray tool
+const DENSITY = 50; //densuty of spray tool
 var timeout;
 
 var wheel = {
-    width: 320,
-    height: 320,
-    padding: 2,
-    sliderMargin: 24,
-    markerRadius: 5,
-    borderWidth: 2,
-    color: 'rgb(68, 255, 158)',
+    "borderWidth": 2,
+    "color": 'rgb(68, 255, 158)',
+    "height": 320,
+    "markerRadius": 5,
+    "padding": 2,
+    "sliderMargin": 24,
+    "width": 320
 };
 
-var colorWheel = iro.ColorWheel('#colorWheel', wheel );
+var colorWheel = iro.ColorWheel('#colorWheel', wheel);
 var colorWheelElement = document.getElementById('colorWheel');
 
-var cml =  document.getElementById('context-menu-lines');
+var cml = document.getElementById('context-menu-lines');
 var linesMenu = document.getElementById('lines-menu');
 var cmrf = document.getElementById('context-menu-right-figures');
 var rightFiguresMenu = document.getElementById('right-figures-menu');
-
 var rfItems = document.getElementById('right-figures-items');
 var lItems = document.getElementById('lines-items');
+
+/**
+ * Classes
+*/
+
+class Rectangle{
+  choose(){
+    drawType = 'Rectangle';
+  }
+
+  move(){
+    ctxShadow.clearRect(0, 0, canvas.width, canvas.height);
+    this.draw(ctxShadow);
+  }
+
+  up(){
+    this.draw(ctx);
+  }
+
+  draw(context){
+    context.strokeRect(startX, startY, mouseX - startX, mouseY - startY);
+  }
+}
+
+class Line{
+  static choose(){
+    backDrawProperties();
+    mainShadow.style.visibility = 'visible'; 
+    drawType = 'Line';
+    startX = startY = undefined;
+  }
+
+  static down(){
+    ctx.beginPath();
+      ctx.moveTo(startX, startY);
+      ctx.lineTo(mouseX, mouseY);
+    ctx.closePath();
+    ctx.stroke(); 
+    startX = mouseX;
+    startY = mouseY;
+  }
+
+  static move(){
+    ctxShadow.clearRect(0, 0, canvas.width, canvas.height);
+    paint = true;
+    ctxShadow.beginPath();
+      ctxShadow.moveTo(startX, startY);
+      ctxShadow.lineTo(mouseX, mouseY);
+    ctxShadow.stroke();
+  }
+}
+
+class Curved{
+  static choose(){
+    mainShadow.style.visibility = 'hidden';
+    drawType = 'Curved';
+    startX = startY = undefined;
+  }
+
+  static draw(){
+    ctx.beginPath();
+      ctx.moveTo(startX, startY);
+      ctx.lineTo(mouseX, mouseY);
+    ctx.closePath();
+    ctx.stroke(); 
+    startX = mouseX;
+    startY = mouseY;
+  }
+
+  static up(){
+    startX = startY = undefined;
+  }
+}
+
+class Triangle{
+  choose(){
+    drawType = 'Triangle';
+  }
+
+  move(){
+    ctxShadow.clearRect(0, 0, canvas.width, canvas.height);
+    lineLength();
+    this.draw(ctxShadow);
+  }
+
+  up(){
+    lineLength();
+    this.draw(ctx);
+  }
+
+  draw(context){
+    context.beginPath();
+      context.moveTo(startX, startY - lineLong);
+      context.lineTo(startX - lineLong, startY + lineLong);
+      context.lineTo(startX + lineLong, startY + lineLong);
+      context.lineTo(startX, startY - lineLong);
+    context.stroke();
+  }
+}
+
+class Circle{
+  choose(){
+    drawType = 'Circle';
+  }
+
+  move(){
+    ctxShadow.clearRect(0, 0, canvas.width, canvas.height);
+    lineLength();
+    this.draw(ctxShadow);
+  }
+
+  up(){
+    lineLength();
+    this.draw(ctx);
+  }
+
+  draw(context){
+    context.beginPath();
+      context.arc(startX, startY, lineLong, 0, 2 * Math.PI, false);
+    context.stroke();
+  }
+}
+
+class RegularPolygon{
+  choose(){
+    if (regularPolygonNumberOfAngles.style.display != 'block') {
+      regularPolygonNumberOfAngles.style.display = 'block';
+    }
+    drawType = 'regularPolygon';
+  }
+
+  move(){
+    ctxShadow.clearRect(0, 0, canvas.width, canvas.height);
+    numberOfSides = regularPolygonNumberOfAngles.value;
+
+    lineLength();
+    this.draw(ctxShadow);
+  }
+
+  up(){
+    lineLength();
+    this.draw(ctx);
+  }
+
+  draw(context){
+    context.beginPath();
+      context.moveTo(startX + (lineLong * Math.cos(0)), startY + (lineLong * Math.sin(0)));          
+      for (let i = 1; i <= numberOfSides; i++) {
+        context.lineTo(startX + (lineLong * Math.cos(i * 2 * Math.PI / numberOfSides)), startY + (lineLong * Math.sin(i * 2 * Math.PI / numberOfSides)));
+      }
+    context.stroke();
+  }
+}
+
+class Spray{
+  static choose(){
+    mainShadow.style.visibility = 'hidden';
+    drawType = 'Spray';
+  }
+
+  down(){
+    ctx.lineJoin = ctx.lineCap = 'round';
+    ctx.moveTo(mouseX, mouseY);
+    let that = this;
+    timeout = setTimeout(() => {
+      that.draw();
+    }, 50);
+  }
+
+  draw(){
+    for (var i = DENSITY; i--;) {
+      let angle = getRandomFloat(0, Math.PI*2);
+      let radius = getRandomFloat(0, ctx.lineWidth);
+      ctx.fillRect(mouseX + (radius * Math.cos(angle)), mouseY + (radius * Math.sin(angle)), 1, 1);
+    }
+    if (!timeout) return;
+    let that = this;
+    timeout = setTimeout(() => {
+      that.draw();
+    }, 50);
+  }
+}
+
+var triangle = new Triangle();
+var regularPolygon = new RegularPolygon();
+var circle = new Circle();
+var rectangle = new Rectangle();
+var spray = new Spray();
 
 /**
  * Functions
 */
 
-function chooseDrawRectangle(){
-  backDrawProperties();
-  mainShadow.style.visibility = 'visible';
-  drawNotLine();
-  drawType = 'Rectangle';
-}
-
-function chooseDrawLine(){
-  backDrawProperties();
-  mainShadow.style.visibility = 'visible'; 
-  clearHistory();
-
-  startX = mouseX = undefined;
-  startY = mouseY = undefined;
-
-  isLine = true;
-  drawType = 'Line';
-}
-
-function chooseDrawCurved(){
-  mainShadow.style.visibility = 'hidden';
-  drawNotLine();
-  drawType = 'Curved';
-}
-
-function chooseDrawTriangle(){
-  backDrawProperties();
-  mainShadow.style.visibility = 'visible';
-  drawNotLine();
-  drawType = 'Triangle';
-}
-
-function chooseDrawCircle(){
-  backDrawProperties();
-  mainShadow.style.visibility = 'visible';
-  drawNotLine();
-  drawType = 'Circle';
+function lineLength(){
+  lineLong = Math.sqrt(Math.pow(startX - mouseX, 2) + Math.pow(startY - mouseY, 2))/2;
 }
 
 function eraserCanvas(){
-  drawNotLine();
   saveDrawProperties();
   ctx.strokeStyle = 'white';
   drawType = 'Curved';
 }
 
 function saveCanvas(){
-  var link = document.createElement('a');
+  let link = document.createElement('a');
+  link.href = canvas.toDataURL();
   link.download = 'Your_masterpiece.png';
-  link.href = canvas.toDataURL('image/png').replace('image/png', 'image/octet-stream');
-  link.click();
+  let event = new MouseEvent('click');//create event
+  link.dispatchEvent(event);// open a save as dialog in FF
 }
 
-function drawCloseFigureDown(e) {
-  mousePos(e);
+function drawCloseFigureDown() {
   startX = mouseX;
   startY = mouseY;
   paint = true;
-}
-
-function drawRectangleMove(e) {
-  ctxShadow.clearRect(0, 0, canvas.width, canvas.height);
-  // if we're not dragging, just return
-  if (!paint) {
-    return;
-  }
-  ctxShadow.strokeRect(startX, startY, mouseX - startX, mouseY - startY);
-}
-
-function drawLineMove(e){
-  ctxShadow.clearRect(0, 0, canvas.width, canvas.height);
-
-  ctxShadow.beginPath();
-    ctxShadow.moveTo(startX, startY);
-    ctxShadow.lineTo(mouseX, mouseY);
-  ctxShadow.stroke();
-}
-
-function drawTriangleMove(e) {
-  ctxShadow.clearRect(0, 0, canvas.width, canvas.height);
-  // if we're not dragging, just return
-  if (!paint) {
-    return;
-  }
-  lineLong = (Math.sqrt((startX-mouseX)**2 + (startY-mouseY)**2))/2;
-
-  ctxShadow.beginPath();
-    ctxShadow.moveTo(startX, startY - lineLong);
-    ctxShadow.lineTo(startX - lineLong, startY + lineLong);
-    ctxShadow.lineTo(startX + lineLong, startY + lineLong);
-    ctxShadow.lineTo(startX, startY - lineLong);
-    ctxShadow.stroke();
-  ctxShadow.closePath();
-}
-
-function drawCircleMove(e){
-  ctxShadow.clearRect(0, 0, canvas.width, canvas.height);
-  // if we're not dragging, just return
-  if (!paint) {
-    return;
-  }
-  lineLong = (Math.sqrt((startX-mouseX)**2 + (startY-mouseY)**2));
-
-  ctxShadow.beginPath();
-    ctxShadow.arc(startX, startY, lineLong, 0, 2 * Math.PI, false);
-  ctxShadow.stroke();
-}
-
-function drawCurved(){
-  for(var i=0; i < clickX.length; i++) {    
-    ctx.beginPath();
-      if(clickDrag[i] && i){
-        ctx.moveTo(clickX[i-1], clickY[i-1]);
-      }else{
-       ctx.moveTo(clickX[i]-1, clickY[i]);
-      }
-      ctx.lineTo(clickX[i], clickY[i]);
-    ctx.closePath();
-    ctx.stroke(); 
-  }
-}
-
-function sprayMouseDown(){
-  ctx.lineJoin = ctx.lineCap = 'round';
-  ctx.moveTo(mouseX, mouseY);
-  timeout = setTimeout(drawSpray(), 50);
-}
-
-function drawSpray() {
-  for (var i = DENSITY; i--; ) {
-    var angle = getRandomFloat(0, Math.PI*2);
-    var radius = getRandomFloat(0, ctx.lineWidth);
-    ctx.fillRect(mouseX + radius * Math.cos(angle), mouseY + radius * Math.sin(angle), 1, 1);
-  }
-  if (!timeout) return;
-  timeout = setTimeout(drawSpray, 50);
-}
-
-function drawNotLine(){
-  clearHistory();
-  backDrawProperties();
-  isLine = false;
 }
 
 function mousePos(e){
   var rect = canvas.getBoundingClientRect();
   mouseX = (e.clientX - rect.left) / (rect.right - rect.left) * canvas.width;//mouse position
   mouseY = (e.clientY - rect.top) / (rect.bottom - rect.top) * canvas.height;
-  return(mouseX,mouseY);
-}
-
-function addClick(mouseX, mouseY, dragging){
-  clickX.push(mouseX);
-  clickY.push(mouseY);
-  clickDrag.push(dragging);
-}
-
-function clearHistory(){
-  clickX=[];
-  clickY=[];
-  clickDrag=[];
+  return(mouseX, mouseY);
 }
 
 function onColorChange(color) {
-  clearHistory();
   ctx.strokeStyle = color.hexString;
   ctx.fillStyle = color.hexString; 
   saveDrawProperties();
@@ -256,27 +307,25 @@ function backDrawProperties(){
   ctx.lineWidth = lineWidthBefore;
 }
 
-function onUndoCanvas () {  
+function onUndoCanvas (){  
   //save the current canvas in redo array
   removeImage();
   canvas.width = canvas.width;
   //create an image object and paint 
   var imageObj = document.createElement('img');
   imageObj.onload = function(){
-      ctx.drawImage(imageObj, 0, 0);
+    ctx.drawImage(imageObj, 0, 0);
   };
   //get from array the source for the image object 
   imageObj.src = savedImages.pop();
   //if the stack is empty then disable the undo button
-  console.log(savedImages.length);  
   if (savedImages.length === 0) {
     undoButton.setAttribute('disabled', 'disabled');
   }
-  clearHistory();
   startX = startY = undefined;
 }
 
-function onRedoCanvas() {
+function onRedoCanvas(){
   //save the current canvas in undo array
   saveImage();
   //clear the canvas
@@ -292,7 +341,6 @@ function onRedoCanvas() {
   if (removedImages.length === 0) {
     redoButton.setAttribute('disabled', 'disabled');
   }
-  clearHistory();
   startX = startY = undefined;
 }
 
@@ -313,108 +361,81 @@ function saveImage(){
 }
 
 function getRandomFloat(min, max) {
-  return Math.random() * (max - min) + min;
-}
-
-function chooseDrawRegularPolygon(){
-  backDrawProperties();
-  mainShadow.style.visibility = 'visible';
-  console.log(regularPolygonNumberOfAngles);
-  if (regularPolygonNumberOfAngles.style.display !=  'block') {
-    regularPolygonNumberOfAngles.style.display = 'block';
-  }
-  
-  drawType = 'regularPolygon';
+  return (Math.random() * (max - min)) + min;
 }
 
 function hideContextMenu(el){
   el.style.opacity = '0';
-  setTimeout(function(){
+  setTimeout(() => {
     el.style.display = 'none';  
   }, 500);
 }
 
-function showContextMenu(e,el){
+function showContextMenu(e, el){
   el.style.left = e.pageX;
   el.style.top = e.pageY;
   el.style.opacity = '1';
-  el.style.display  = 'block';
+  el.style.display = 'block';
 }
 
 function onContextMenuChoose(item, menu){
-  for (var i = 0; i < item.children.length; i++) {
-    item.children[i].addEventListener('click', function(){
-      menu.children[0].innerHTML = this.innerText;//change text at button
+  for (const itemButton of item.children) {
+    itemButton.addEventListener('click', () => {
+      menu.children[0].innerHTML = itemButton.innerText;//change text at button
 
-      if (this.className != 'regular-polygon') {
-        this.style.display = 'none';//hide choose drawing type
+      if (itemButton.className != 'regular-polygon') {
+        itemButton.style.display = 'none';//hide choose drawing type
       } else {
-        chooseDrawRegularPolygon();//show input field
+        regularPolygon.choose();//show input field
       }
-        /*Do visible previous menu item*/
-        for (var h = 0; h < item.children.length; h++) {
-          if (menu.className == item.children[h].className){
-            item.children[h].style.display = 'block';  
-          }
+      /*Do visible previous menu item*/
+      for (const childItem of item.children) {
+        if (menu.className == childItem.className){
+          childItem.style.display = 'block';  
         }
-        
+      }
+              
       menu.className = '';//clear class list
-      menu.classList.add(this.className);//add new class 
+      menu.classList.add(itemButton.className);//add new class 
+      menu.click();//simulate click
     });
   }
 }
-
-function drawRegularPolygonMove(e){
-  numberOfSides = regularPolygonNumberOfAngles.value;
-  lineLong = Math.sqrt((startX-mouseX)**2 + (startY-mouseY)**2)/2;
-
-  ctxShadow.clearRect(0, 0, canvas.width, canvas.height);
-  if (!paint) {
-    return;
-  }
-  ctxShadow.beginPath();
-  ctxShadow.moveTo (startX +  lineLong * Math.cos(0), startY +  lineLong *  Math.sin(0));          
-   
-  for (var i = 1; i <= numberOfSides;i += 1) {
-      ctxShadow.lineTo (startX + lineLong * Math.cos(i * 2 * Math.PI / numberOfSides), startY + lineLong * Math.sin(i * 2 * Math.PI / numberOfSides));
-  }
-  ctxShadow.stroke();
-}
-
+  
 /**
  * Event Listeners
 */
 
 colorWheel.on('color:change', onColorChange);
 
-document.addEventListener('DOMContentLoaded', function(){
+document.addEventListener('DOMContentLoaded', () => {
   ctx.strokeStyle = colorWheel.color.hexString;
   ctx.lineJoin = 'round';
   ctx.lineWidth = 3;
   saveDrawProperties();
 
-  for (var n = 0; n < chooseRectangle.length; n++) {
-    chooseRectangle[n].addEventListener('click', chooseDrawRectangle);
+  for (let choosen of chooseRectangle) {
+    choosen.addEventListener('click', rectangle.choose());
   }
 
-  for (var n = 0; n < chooseLine.length; n++) {
-    chooseLine[n].addEventListener('click', chooseDrawLine);
+  for (let choosen of chooseLine) {
+    choosen.addEventListener('click', Line.choose());
   }
 
-  for (var n = 0; n < chooseCurvedLine.length; n++) {
-    chooseCurvedLine[n].addEventListener('click', chooseDrawCurved);
+  for (let choosen of chooseCurvedLine) {
+    choosen.addEventListener('click', Curved.choose());
   }
 
-  for (var n = 0; n < chooseTriangle.length; n++) {
-    chooseTriangle[n].addEventListener('click', chooseDrawTriangle);
+  for (let choosen of chooseTriangle) {
+    choosen.addEventListener('click', triangle.choose());
   }
 
-  for (var n = 0; n < chooseCircle.length; n++) {
-    chooseCircle[n].addEventListener('click', chooseDrawCircle);
+  for (let choosen of chooseCircle) {
+    choosen.addEventListener('click', circle.choose());
   }
 
-  for (var n = 0; n < chooseRegularPolygon.length; n++) {
-    chooseRegularPolygon[n].addEventListener('click', chooseDrawRegularPolygon);
+  for (let choosen of chooseRegularPolygon) {
+    choosen.addEventListener('click', regularPolygon.choose());
   }
 
   rfItems.children[0].style.display = 'none';
@@ -431,170 +452,142 @@ document.addEventListener('DOMContentLoaded', function(){
   redoButton.setAttribute('disabled', 'disabled');
 });
 
-canvas.addEventListener('mousedown',function(e){
+/*Canvas Events*/
+canvas.onmousedown = function(e){
   paint = true;
   mousePos(e);
-  addClick(mouseX,mouseY,false);
   switch (drawType){
     case 'Curved':
-      drawCurved(e);
+      Curved.draw();
       break;
     case 'Spray':
-      sprayMouseDown();
+      spray.down();
       break;
   }
   saveImage();
-});
+};
 
-canvas.addEventListener('mousemove',function(e){
-  if (isLine === false){
-    if (paint) {
-      mousePos(e);
-      addClick(mouseX, mouseY, true);
-      switch (drawType){
-        case 'Curved':
-          drawCurved(e);
-          break;
-      }
+canvas.onmousemove = function(e){
+  if (paint){
+    mousePos(e);
+    switch (drawType){
+      case 'Curved':
+        Curved.draw();
+        break;
     }
   }
-});
+};
 
-canvas.addEventListener('mouseup',function(e){
+canvas.onmouseup = function(){
   paint = false;
   switch (drawType){
     case 'Spray':
       clearTimeout(timeout);
       break;
+    case 'Curved':
+      Curved.up();
+      break;
   }
-});
+};
 
 /*stop draw when mouse leave canvas*/
-canvas.addEventListener('mouseleave',function(e){
+canvas.onmouseleave = function(){
   paint = false;
   switch (drawType){
     case 'Spray':
       clearTimeout(timeout);
       break;
   }
-});
+};
 
-canvasShadow.addEventListener('click',function(e){
-  mousePos(e);
-  switch (drawType){
-    case 'Line':
-      ctx.beginPath();
-        ctx.moveTo(startX, startY);
-        ctx.lineTo(mouseX, mouseY);
-      ctx.stroke();
-      break;
-  }
-});
-
-canvasShadow.addEventListener('dblclick', function(){
+/*CanvasShadow Events*/
+canvasShadow.ondblclick = function(){
   paint = false;
   startX = startY = undefined;
   ctxShadow.clearRect(0, 0, canvas.width, canvas.height);
-});
+};
 
-canvasShadow.addEventListener('mousedown',function (e) {
-  switch (drawType){
-    case 'Triangle':
-      drawCloseFigureDown(e);
-      break;
-    case 'Rectangle':
-      drawCloseFigureDown(e);
-      break;
-    case 'Circle':
-      drawCloseFigureDown(e);
-      break;
-    case 'regularPolygon':
-      drawCloseFigureDown(e);
-      break;
-  }
-  saveImage();
-});
-
-canvasShadow.addEventListener('mousemove',function (e) {
+canvasShadow.onmousedown = function(e){
   mousePos(e);
   switch (drawType){
     case 'Triangle':
-      drawTriangleMove(e);
+      drawCloseFigureDown();
       break;
     case 'Rectangle':
-      drawRectangleMove(e);
+      drawCloseFigureDown();
       break;
     case 'Circle':
-      drawCircleMove(e);
-      break;
-    case 'Line':
-      paint = true;
-      drawLineMove(e);
+      drawCloseFigureDown();
       break;
     case 'regularPolygon':
-      drawRegularPolygonMove(e);
+      drawCloseFigureDown();
+      break;
+    case 'Line':
+      Line.down();
       break;
   }
-});
+  saveImage();
+};
 
-canvasShadow.addEventListener('mouseup', function(e){
+canvasShadow.onmousemove = function (e){
+  mousePos(e);
+  // if we're not dragging, just return
+  if (!paint && drawType != 'Line') {
+    return;
+  }
   switch (drawType){
     case 'Triangle':
-      lineLong = Math.sqrt((startX-mouseX)**2 + (startY-mouseY)**2)/2;
-      ctx.beginPath();
-        ctx.moveTo(startX, startY - lineLong);
-        ctx.lineTo(startX - lineLong, startY + lineLong);
-        ctx.lineTo(startX + lineLong, startY + lineLong);
-        ctx.lineTo(startX, startY - lineLong);
-      ctx.stroke();
-      break; 
+      triangle.move();
+      break;
     case 'Rectangle':
-      ctx.strokeRect(startX, startY, mouseX - startX, mouseY - startY);
+      rectangle.move();
       break;
     case 'Circle':
-      lineLong = Math.sqrt((startX-mouseX)**2 + (startY-mouseY)**2);
-      ctx.beginPath();
-        ctx.arc(startX, startY, lineLong, 0, 2 * Math.PI, false);
-      ctx.stroke();
+      circle.move();
       break;
     case 'Line':
-      ctx.beginPath();
-        ctx.moveTo(startX, startY);
-        ctx.lineTo(mouseX, mouseY);
-      ctx.stroke();
-      startX = mouseX;
-      startY = mouseY;
+      Line.move();
       break;
     case 'regularPolygon':
-      lineLong = Math.sqrt((startX-mouseX)**2 + (startY-mouseY)**2)/2;
-      ctx.beginPath();
-        ctx.moveTo (startX +  lineLong * Math.cos(0), startY +  lineLong *  Math.sin(0));          
-        for (var i = 1; i <= numberOfSides;i += 1) {
-          ctx.lineTo (startX + lineLong * Math.cos(i * 2 * Math.PI / numberOfSides), startY + lineLong * Math.sin(i * 2 * Math.PI / numberOfSides));
-        }
-      ctx.stroke();
+      regularPolygon.move();
+      break;
+  }
+};
+
+canvasShadow.onmouseup = function(){
+  switch (drawType){
+    case 'Triangle':
+      triangle.up();
+      break; 
+    case 'Rectangle':
+      rectangle.up();
+      break;
+    case 'Circle':
+      circle.up();
+      break;
+    case 'regularPolygon':
+      regularPolygon.up();
       break;
   }
   paint = false;
-  //ctxShadow.clearRect(0, 0, canvasShadow.width, canvasShadow.height);
-});
+  //ctxShadow.clearRect(0, 0, canvasShadow.width, canvasShadow.height);  
+};
 
-canvasShadow.addEventListener('mouseleave',function(e){
+canvasShadow.onmouseleave = function(){
   paint = false;
   //ctxShadow.clearRect(0, 0, canvas.width, canvas.height);
-});
+};
 
 window.onkeydown = function(e){
-  var code = e.keyCode ? e.keyCode : e.which;
+  var code = e.keyCode;
   if ((code === 8) || (code === 90 && e.ctrlKey)){ //Undo event on Backspace press ot Ctrl+Z
     if (savedImages.length > 0) {
       onUndoCanvas();
-      backDrawProperties();
-    } else if (savedImages.length === 0) {
-      backDrawProperties();
+    } else if (savedImages.length == 0) {
       ctxShadow.clearRect(0, 0, canvasShadow.width, canvasShadow.height);
       ctx.clearRect(0, 0, canvas.width, canvas.height);
     } 
+    backDrawProperties();
   } else if (code === 89 && e.ctrlKey){ //Redo event on Ctrl+Y press
     if (removedImages.length > 0){
       onRedoCanvas();
@@ -603,157 +596,141 @@ window.onkeydown = function(e){
   }
 };
 
-chooseNotDraw.addEventListener('click', function(){
+chooseNotDraw.onclick = function(){
   mainShadow.style.visibility = 'visible';
   drawType = undefined;
   paint = false;
-  clearHistory();
-});
+  startX = startY = undefined;
+};
 
-clearButton.addEventListener('click', function(){
+clearButton.onclick = function(){
   ctxShadow.clearRect(0, 0, canvasShadow.width, canvasShadow.height);
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-  clearHistory();
-});
+};
 
-colorButton.addEventListener('click', function(){
+colorButton.onclick = function(){
   colorWheelElement.classList.toggle('colorWheelOpen');
   colorWheelElement.classList.toggle('colorWheelClose');
-});
+};
 
-undoButton.addEventListener('click', function(){
-  saveDrawProperties();
-  onUndoCanvas();
-  backDrawProperties();
-});
+undoButton.onclick = () => {
+onUndoCanvas();
+};
 
-redoButton.addEventListener('click', function(){
-  saveDrawProperties();
-  onRedoCanvas();
-  backDrawProperties();
-});
+redoButton.onclick = () => {
+onRedoCanvas();
+};
 
-eraser.addEventListener('click', function(){
+eraser.onclick = function(){
   mainShadow.style.visibility = 'hidden';
   eraserCanvas();
-});
+};
 
-spray.addEventListener('click', function(){
-  mainShadow.style.visibility = 'hidden';
-  drawType = 'Spray';
-  ctx.fillStyle = 'black';
-});
+sprayButton.onclick = function(){
+  Spray.choose();
+};
 
-save.addEventListener('click', function(){
-  saveCanvas();
-});
+save.onclick = () => saveCanvas();
 
-rightFiguresMenu.addEventListener('click', function(){
+rightFiguresMenu.onclick = function(){
+  mainShadow.style.visibility = 'visible';
+  backDrawProperties();
   switch(rightFiguresMenu.className){
     case 'circle':
-      chooseDrawCircle();
+      circle.choose();
       break;
     case 'rectangle':
-      chooseDrawRectangle();
+      rectangle.choose();
       break;
     case 'triangle':
-      chooseDrawTriangle();
+      triangle.choose();
       break;
     case 'regular-polygon':
-      chooseDrawRegularPolygon();
+      regularPolygon.choose();
       break;
   }
-});
+};
 
-linesMenu.addEventListener('click', function(){
+linesMenu.onclick = function(){
   switch(linesMenu.className){
     case 'curved':
-      chooseDrawCurved();
+      Curved.choose();
       break;
     case 'line':
-      chooseDrawLine();
+      Line.choose();
       break;
-    case 'Quadratic':
-      chooseDrawQuadratic();
+    case 'quadratic':
+      Quadratic.choose();
       break;
   }
-});
+};
 
-linesMenu.addEventListener('contextmenu',function(e){
+linesMenu.oncontextmenu = function(e){
   e.preventDefault();
-  showContextMenu(e,cml);
-});
+  showContextMenu(e, cml);
+};
 
-rightFiguresMenu.addEventListener('contextmenu',function(e){
+rightFiguresMenu.oncontextmenu = function(e){
   e.preventDefault();
-  showContextMenu(e,cmrf);
-});
+  showContextMenu(e, cmrf);
+};
 
-cml.addEventListener('click',function(){
-  hideContextMenu(this);
-});
+cml.onclick = () => hideContextMenu(cml);
 
-cmrf.addEventListener('click',function(){
-  if (rightFiguresMenu.className !== 'regular-polygon') {
+cmrf.onclick = function(){
+  if (rightFiguresMenu.className != 'regular-polygon') {
     hideContextMenu(this);
   }
-});
+};
 
-cml.addEventListener('mouseleave', function(){
-  hideContextMenu(this);
-});
+cml.onmouseleave = () => hideContextMenu(cml);
 
-cmrf.addEventListener('mouseleave', function(){
-  hideContextMenu(this);
-});
-
+cmrf.onmouseleave = () => hideContextMenu(cmrf);
 
 /**
  *
 */
 
-
 ////////Used with some changes///////////// http://jsbin.com/dulifezi/2/edit 
-function rangeSlider(id, onDrag) {
-
-  var range = document.getElementById(id),
-    dragger = range.children[0],
+function rangeSlider(onDrag) {
+  var range = document.getElementById('range-slider'),
+    [dragger] = [range.children[0]],
     draggerWidth = 10, // width of your dragger
     down = false,
     rangeWidth, rangeLeft;
 
-  dragger.style.width = draggerWidth + 'px';
-  dragger.style.left = -draggerWidth + 'px';
-  dragger.style.marginLeft = (draggerWidth / 2) + 'px';
 
-  range.addEventListener('mousedown', function(e) {
-    rangeWidth = this.offsetWidth;
-    rangeLeft = this.offsetLeft;
+  dragger.style.width = `${draggerWidth}px`;
+  dragger.style.left = `${-draggerWidth}px`;
+  dragger.style.marginLeft = `${draggerWidth / 2}px`;
+
+  range.addEventListener('mousedown', (e) => {
+    rangeWidth = range.offsetWidth;
+    rangeLeft = range.offsetLeft;
     down = true;
     updateDragger(e);
     return false;
   });
 
-  document.addEventListener('mousemove', function(e) {
+  document.addEventListener('mousemove', (e) => {
     updateDragger(e);
   });
 
-  document.addEventListener('mouseup', function() {
+  document.addEventListener('mouseup', () => {
     down = false;
   });
 
-  function updateDragger(e) {
+  function updateDragger(e){
     if (down && e.pageX >= rangeLeft && e.pageX <= (rangeLeft + rangeWidth)) {
-      dragger.style.left = e.pageX - rangeLeft - draggerWidth + 'px';
+      dragger.style.left = `${e.pageX - rangeLeft - draggerWidth}px`;
       if (typeof onDrag == 'function') onDrag(Math.round(((e.pageX - rangeLeft) / rangeWidth) * 100));
     }
   }
 }
 
-rangeSlider('range-slider', function(value) {
+rangeSlider((value) => {
   ctx.lineWidth = value;
   ctxShadow.lineWidth = value;
-  clearHistory();
   saveDrawProperties();
 });
 /////////////////////////////////////// End of StackOwerflow user code)

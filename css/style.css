@@ -140,6 +140,7 @@ button p{
   box-shadow: 3px 3px 2px #E9E9E9;
   transition: .5s;
   z-index: 100;
+  cursor: pointer;
 }
 
 li{
@@ -168,3 +169,4 @@ li{
 	background:white; 	
   	border-radius: 0;
 }
+
