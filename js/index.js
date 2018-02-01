@@ -98,16 +98,6 @@ class Line{
     startX = startY = undefined;
   }
 
-  static down(){
-    ctx.beginPath();
-      ctx.moveTo(startX, startY);
-      ctx.lineTo(mouseX, mouseY);
-    ctx.closePath();
-    ctx.stroke(); 
-    startX = mouseX;
-    startY = mouseY;
-  }
-
   static move(){
     ctxShadow.clearRect(0, 0, canvas.width, canvas.height);
     paint = true;
@@ -162,6 +152,7 @@ class Triangle{
       context.lineTo(startX - lineLong, startY + lineLong);
       context.lineTo(startX + lineLong, startY + lineLong);
       context.lineTo(startX, startY - lineLong);
+    context.closePath();
     context.stroke();
   }
 }
@@ -523,7 +514,7 @@ canvasShadow.onmousedown = function(e){
       drawCloseFigureDown();
       break;
     case 'Line':
-      Line.down();
+      Curved.draw();
       break;
   }
   saveImage();

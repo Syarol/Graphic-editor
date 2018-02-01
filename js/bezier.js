@@ -11,7 +11,7 @@ var mainShadow = document.getElementById('main-shadow');
 var canvasShadow = document.getElementById('canvas-shadow');
 var ctxShadow = document.getElementById('canvas-shadow').getContext('2d');
 var chooseQuadratic = document.getElementsByClassName('quadratic');
-
+var machIndex;
 var QuadraticSFP = [];//Array for Start/Finish control points
 var j = 0;
 var deltaCenter = null;
@@ -136,6 +136,37 @@ class Drag{
 }
 
 /**
+ * functions
+*/
+
+function isAnyoneInside(p){
+  let ifYes = false;
+  searchInside: for (let controlPoint of CPQ) {
+    if(controlPoint.isInside(p)){
+      ifYes = true;
+      machIndex = CPQ.indexOf(controlPoint);
+      break searchInside;
+    }
+  }
+  return ifYes;
+} 
+
+function drawOnDblclick(exceptLast){
+  startX = startY = undefined;
+  if (j !== 0) {
+    for (let k = 0; k < CPQ.length - exceptLast; k++) {
+      Quadratic.onlyLine(ctx, k);
+    }
+    ctxShadow.clearRect(0, 0, canvas.width, canvas.height);
+  }
+  //clear arrays
+  CPQ.splice(0, CPQ.length);
+  QuadraticSFP.splice(0, QuadraticSFP.length);
+  //clear index
+  j = 0;
+}
+
+/**
  * Event Listeners
 */
 
@@ -151,31 +182,26 @@ canvasShadow.onclick = function(){
 
 canvasShadow.addEventListener('mousedown', (e) => {
   let p = new Point(mouseX,mouseY);
-  searchPoint : for (let controlPoint of CPQ) {
-    if (drawType == 'dragQuadratic' && controlPoint.isInside(p)){
-      Drag.start(e, CPQ.indexOf(controlPoint));
-      break searchPoint;
-    }
+  if (drawType == 'dragQuadratic' && isAnyoneInside(p)){
+    Drag.start(e, machIndex);
   }
 });
 
 canvasShadow.addEventListener('mousemove', (e) => {
   let p = new Point(mouseX,mouseY);
-  if (j > 0){
-    for (let controlPoint of CPQ) {
-      switch (drawType){
-        case 'Quadratic':
-          if(controlPoint.isInside(p)){
-            drawType = 'dragQuadratic';
-          } 
-          break;
-        case 'dragQuadratic':
-          if(controlPoint.isInside(p)){
-            Drag.do(e, CPQ.indexOf(controlPoint));
-          }
-          break;
+  switch (drawType){
+    case 'Quadratic':
+      if(isAnyoneInside(p)){
+        drawType = 'dragQuadratic';
+      } 
+      break;
+    case 'dragQuadratic':
+      if(isAnyoneInside(p)){
+        Drag.do(e, machIndex);
+      } else{
+        drawType = 'Quadratic';
       }
-    }
+      break;
   }
 });
 
@@ -184,6 +210,11 @@ canvasShadow.addEventListener('mouseup', () => {
     case 'dragQuadratic':
       Drag.stop();
       break;
+    case 'Quadratic':
+
+      break;
+    default:
+      ctxShadow.clearRect(0, 0, canvas.width, canvas.height);
   }
 });
 
@@ -199,20 +230,12 @@ canvasShadow.addEventListener('mouseout', () => {
 canvasShadow.addEventListener('dblclick', () => {
   switch (drawType){
     case 'dragQuadratic':
-      startX = startY = undefined;
-      if (j !== 0) {
-        for (var k = 0; k < CPQ.length; k++) {
-          Quadratic.onlyLine(ctx, k);
-        }
-        ctxShadow.clearRect(0, 0, canvas.width, canvas.height);
-      }
-      //clear arrays
-      CPQ.splice(0, CPQ.length);
-      QuadraticSFP.splice(0, QuadraticSFP.length);
-      //clear index
-      j = 0;
+      drawOnDblclick(0);
       //return drawType to primary 
       drawType = 'Quadratic';
+      break;
+    case 'Quadratic':
+      drawOnDblclick(2);
       break;
   }
 });
