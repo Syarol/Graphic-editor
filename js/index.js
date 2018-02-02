@@ -561,12 +561,10 @@ canvasShadow.onmouseup = function(){
       break;
   }
   paint = false;
-  //ctxShadow.clearRect(0, 0, canvasShadow.width, canvasShadow.height);  
 };
 
 canvasShadow.onmouseleave = function(){
   paint = false;
-  //ctxShadow.clearRect(0, 0, canvas.width, canvas.height);
 };
 
 window.onkeydown = function(e){
@@ -597,6 +595,12 @@ chooseNotDraw.onclick = function(){
 clearButton.onclick = function(){
   ctxShadow.clearRect(0, 0, canvasShadow.width, canvasShadow.height);
   ctx.clearRect(0, 0, canvas.width, canvas.height);
+  //clear arrays
+  CPQ.splice(0, CPQ.length);
+  QuadraticSFP.splice(0, QuadraticSFP.length);
+  //clear index
+  j = 0;
+  startX = startY = undefined;
 };
 
 colorButton.onclick = function(){
@@ -653,6 +657,9 @@ linesMenu.onclick = function(){
     case 'quadratic':
       Quadratic.choose();
       break;
+    case 'bezier':
+      Bezier.choose();
+      break;    
   }
 };
 
